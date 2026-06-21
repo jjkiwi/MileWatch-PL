@@ -1,0 +1,36 @@
+# MileWatch PL - konfiguracja zrodel i profilu uzytkownika
+
+sources:
+  - name: "InsideFlyer.de"
+    type: rss
+    url: "https://www.insideflyer.de/feed/"
+    enabled: true
+
+  - name: "Kawa z Mlekiem"
+    type: rss
+    url: "https://kawazmlekiem.pl/feed/"
+    enabled: true
+
+  - name: "Miles & More PL - Kup mile"
+    type: scrape
+    # UWAGA: URL najlepszego przypuszczenia, nie zweryfikowany na zywo (brak dostepu do sieci).
+    # Sprawdz i popraw przed pierwszym uruchomieniem w srodowisku z dostepem do internetu.
+    url: "https://www.miles-and-more.com/pl/pl/online-services/buy-bonus-or-gift-miles.html"
+    enabled: true
+
+# Profil uzytkownika - okresla ktore promocje trafiaja do digestu
+profile:
+  typy_promocji:
+    - buy_miles
+    - mileage_bargain
+    - partner_bonus
+  partnerzy:
+    - "Lufthansa"
+    - "LOT"
+    - "Hertz"
+    - "Marriott"
+  regiony:
+    - "Europa"
+    - "Polska"
+  trasy: []
+  min_bonus_pct: 20
