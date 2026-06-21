@@ -1,0 +1,104 @@
+body {
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    color: #1a1a1a;
+    background: #fafafa;
+}
+
+h1 {
+    margin-bottom: 0;
+}
+
+.subtitle {
+    color: #666;
+    margin-top: 0.25rem;
+}
+
+.filters {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin: 1.5rem 0;
+}
+
+.filters select {
+    padding: 0.4rem;
+    font-size: 0.9rem;
+}
+
+.filters .clear {
+    align-self: center;
+    font-size: 0.85rem;
+    color: #b00;
+}
+
+.empty {
+    color: #666;
+    font-style: italic;
+}
+
+.promotions {
+    list-style: none;
+    padding: 0;
+}
+
+.promo {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.promo.relevant {
+    border-left: 4px solid #2a7a2a;
+}
+
+.promo-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.badge {
+    background: #eee;
+    border-radius: 4px;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+}
+
+.bonus {
+    color: #b06f00;
+    font-weight: bold;
+}
+
+.tytul {
+    font-weight: bold;
+}
+
+.profile-match {
+    color: #2a7a2a;
+    font-size: 0.8rem;
+    margin-left: auto;
+}
+
+.streszczenie {
+    margin: 0.5rem 0;
+}
+
+.meta {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+}
+
+.source {
+    font-size: 0.85rem;
+}

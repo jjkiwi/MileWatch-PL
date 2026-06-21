@@ -1,5 +1,6 @@
 import sqlite3
 from datetime import datetime, timezone
+from pathlib import Path
 
 from models import Promotion
 
@@ -23,10 +24,35 @@ CREATE TABLE IF NOT EXISTS promotions (
 
 
 def connect(db_path: str = "data/milewatch.db") -> sqlite3.Connection:
+    Path(db_path).parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(db_path)
     conn.execute(SCHEMA)
     conn.commit()
     return conn
+
+
+SELECT_COLUMNS = (
+    "id, tytul, typ, bonus_pct, partner, wazne_do, regiony, trasy, "
+    "zrodlo_url, zrodlo_nazwa, streszczenie, pierwszy_raz_widziane, hash_dedup"
+)
+
+
+def _row_to_promotion(row: tuple) -> Promotion:
+    return Promotion(
+        id=row[0],
+        tytul=row[1],
+        typ=row[2],
+        bonus_pct=row[3],
+        partner=row[4],
+        wazne_do=row[5],
+        regiony=row[6].split(",") if row[6] else [],
+        trasy=row[7].split(",") if row[7] else [],
+        zrodlo_url=row[8],
+        zrodlo_nazwa=row[9],
+        streszczenie=row[10],
+        pierwszy_raz_widziane=row[11],
+        hash_dedup=row[12],
+    )
 
 
 def get_known_hashes(conn: sqlite3.Connection) -> set[str]:
@@ -38,32 +64,18 @@ def get_recent_promotions(conn: sqlite3.Connection) -> list[Promotion]:
     """Zwraca promocje, ktore jeszcze nie wygasly (lub bez daty wygasniecia), do porownania fuzzy."""
     today = datetime.now(timezone.utc).date().isoformat()
     rows = conn.execute(
-        "SELECT id, tytul, typ, bonus_pct, partner, wazne_do, regiony, trasy, "
-        "zrodlo_url, zrodlo_nazwa, streszczenie, pierwszy_raz_widziane, hash_dedup "
-        "FROM promotions WHERE wazne_do IS NULL OR wazne_do >= ?",
+        f"SELECT {SELECT_COLUMNS} FROM promotions WHERE wazne_do IS NULL OR wazne_do >= ?",
         (today,),
     ).fetchall()
+    return [_row_to_promotion(row) for row in rows]
 
-    promotions = []
-    for row in rows:
-        promotions.append(
-            Promotion(
-                id=row[0],
-                tytul=row[1],
-                typ=row[2],
-                bonus_pct=row[3],
-                partner=row[4],
-                wazne_do=row[5],
-                regiony=row[6].split(",") if row[6] else [],
-                trasy=row[7].split(",") if row[7] else [],
-                zrodlo_url=row[8],
-                zrodlo_nazwa=row[9],
-                streszczenie=row[10],
-                pierwszy_raz_widziane=row[11],
-                hash_dedup=row[12],
-            )
-        )
-    return promotions
+
+def get_all_promotions(conn: sqlite3.Connection) -> list[Promotion]:
+    """Zwraca wszystkie zapisane promocje (cala historia), najnowsze pierwsze."""
+    rows = conn.execute(
+        f"SELECT {SELECT_COLUMNS} FROM promotions ORDER BY pierwszy_raz_widziane DESC"
+    ).fetchall()
+    return [_row_to_promotion(row) for row in rows]
 
 
 def save_promotion(conn: sqlite3.Connection, promo: Promotion) -> bool:

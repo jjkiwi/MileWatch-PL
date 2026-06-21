@@ -94,7 +94,21 @@ filtra na danym polu).
 5. **Digest** (`digest.py`) - filtruje nowo zapisane promocje wg profilu i formatuje wyjscie
    terminalowe ze zrodlami.
 
+## Front (podglad w przegladarce)
+
+Lekki lokalny serwer Flask, ktory pokazuje cala historie promocji z bazy (nie tylko nowe z
+ostatniego `run.py`), z filtrami po typie/partnerze/regionie. Promocje zgodne z Twoim profilem
+z `config.yaml` sa wyrozniane (zielony pasek + znaczek "profil").
+
+```bash
+python app.py
+```
+
+Otworz http://127.0.0.1:5000 w przegladarce. Wymaga uprzedniego uruchomienia `python run.py`
+przynajmniej raz, zeby baza `data/milewatch.db` miala jakies dane.
+
 ## Status
 
-Faza 1 (ten pipeline terminalowy) - zaimplementowana.
+Faza 1 (pipeline terminalowy) - zaimplementowana.
+Front w przegladarce (Flask, podglad historii + filtry) - zaimplementowany.
 Faza 2 (alerty Telegram) i Faza 3 (automatyzacja GitHub Actions) - jeszcze nie zaczete.
