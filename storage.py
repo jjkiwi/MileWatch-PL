@@ -20,13 +20,18 @@ CREATE TABLE IF NOT EXISTS promotions (
     pierwszy_raz_widziane TEXT NOT NULL,
     hash_dedup TEXT UNIQUE NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS notified (
+    promo_id TEXT PRIMARY KEY,
+    notified_at TEXT NOT NULL
+);
 """
 
 
 def connect(db_path: str = "data/milewatch.db") -> sqlite3.Connection:
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(db_path)
-    conn.execute(SCHEMA)
+    conn.executescript(SCHEMA)
     conn.commit()
     return conn
 
@@ -76,6 +81,30 @@ def get_all_promotions(conn: sqlite3.Connection) -> list[Promotion]:
         f"SELECT {SELECT_COLUMNS} FROM promotions ORDER BY pierwszy_raz_widziane DESC"
     ).fetchall()
     return [_row_to_promotion(row) for row in rows]
+
+
+def get_unnotified_promotions(conn: sqlite3.Connection) -> list[Promotion]:
+    """Zwraca nieprzedawnione promocje, dla ktorych nie wyslano jeszcze alertu Telegram.
+
+    Niezalezne od "nowosci" w danym uruchomieniu run.py - jesli wyslanie alertu wczesniej
+    sie nie udalo (np. blad sieci), promocja zostanie ponownie zakwalifikowana tutaj.
+    """
+    today = datetime.now(timezone.utc).date().isoformat()
+    rows = conn.execute(
+        f"SELECT {SELECT_COLUMNS} FROM promotions "
+        "WHERE (wazne_do IS NULL OR wazne_do >= ?) "
+        "AND id NOT IN (SELECT promo_id FROM notified)",
+        (today,),
+    ).fetchall()
+    return [_row_to_promotion(row) for row in rows]
+
+
+def mark_notified(conn: sqlite3.Connection, promo_id: str) -> None:
+    conn.execute(
+        "INSERT OR IGNORE INTO notified (promo_id, notified_at) VALUES (?, ?)",
+        (promo_id, datetime.now(timezone.utc).isoformat()),
+    )
+    conn.commit()
 
 
 def save_promotion(conn: sqlite3.Connection, promo: Promotion) -> bool:

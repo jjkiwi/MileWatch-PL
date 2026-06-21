@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 import dedup
 import digest
 import storage
+import telegram_alert
 from fetch_rss import fetch_rss_items
 from fetch_scrape import fetch_scrape_items
 from normalize import normalize_item
@@ -69,6 +70,15 @@ def main() -> int:
     relevant = digest.filter_for_profile(new_promotions, profile)
     print()
     print(digest.format_digest(relevant))
+
+    telegram_token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    telegram_chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+    if telegram_token and telegram_chat_id:
+        pending = digest.filter_for_profile(storage.get_unnotified_promotions(conn), profile)
+        sent = telegram_alert.send_alerts(conn, telegram_token, telegram_chat_id, pending)
+        logger.info("Telegram: wyslano %d/%d alertow", sent, len(pending))
+    else:
+        logger.info("Telegram nieskonfigurowany (brak TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID) - pomijam alerty")
 
     return 0
 

@@ -93,6 +93,8 @@ filtra na danym polu).
    bezpieczenstwa przy zapisie.
 5. **Digest** (`digest.py`) - filtruje nowo zapisane promocje wg profilu i formatuje wyjscie
    terminalowe ze zrodlami.
+6. **Telegram** (`telegram_alert.py`, opcjonalnie) - wysyla alert dla kazdej nieprzedawnionej,
+   jeszcze niewyslanej, profilowo-zgodnej promocji.
 
 ## Front (podglad w przegladarce)
 
@@ -107,8 +109,36 @@ python app.py
 Otworz http://127.0.0.1:5000 w przegladarce. Wymaga uprzedniego uruchomienia `python run.py`
 przynajmniej raz, zeby baza `data/milewatch.db` miala jakies dane.
 
+## Alerty Telegram (Faza 2)
+
+Opcjonalne - jesli `TELEGRAM_BOT_TOKEN` i `TELEGRAM_CHAT_ID` nie sa ustawione, `run.py` po
+prostu pomija ten krok (widac to w logu jako info, nie blad).
+
+### Konfiguracja bota
+
+1. W Telegramie napisz do **@BotFather**, wyslij `/newbot` i podaj nazwe - dostaniesz token
+   (`TELEGRAM_BOT_TOKEN`).
+2. Napisz cokolwiek do swojego nowego bota (musi miec z Toba otwarta rozmowe, zeby moc wyslac
+   wiadomosc).
+3. Pobierz swoj `chat_id`:
+   ```bash
+   curl "https://api.telegram.org/bot<TWOJ_TOKEN>/getUpdates"
+   ```
+   W odpowiedzi JSON znajdz `"chat":{"id": ...}` - to jest `TELEGRAM_CHAT_ID`.
+4. Wpisz obie wartosci w `.env`.
+
+### Jak to dziala
+
+Po zapisaniu nowych promocji do bazy, `run.py` pyta o **wszystkie nieprzedawnione promocje,
+ktore jeszcze nie zostaly wyslane** (`storage.get_unnotified_promotions`) - nie tylko te z
+biezacego uruchomienia. Dzieki temu jest to **idempotentne** i odporne na bledy: jesli wyslanie
+alertu sie nie powiedzie (np. blad sieci), promocja nie jest oznaczana jako wyslana i zostanie
+ponowiona przy nastepnym uruchomieniu `run.py`, a juz wyslane nigdy nie trafiaja do Telegrama
+po raz drugi.
+
 ## Status
 
 Faza 1 (pipeline terminalowy) - zaimplementowana.
 Front w przegladarce (Flask, podglad historii + filtry) - zaimplementowany.
-Faza 2 (alerty Telegram) i Faza 3 (automatyzacja GitHub Actions) - jeszcze nie zaczete.
+Faza 2 (alerty Telegram) - zaimplementowana.
+Faza 3 (automatyzacja GitHub Actions) - jeszcze nie zaczeta.
