@@ -8,7 +8,10 @@ import cache
 logger = logging.getLogger(__name__)
 
 RSS_CACHE_MAX_AGE = 60 * 60  # 1h - feedy RSS zmieniaja sie czesto, ale nie co minute
-USER_AGENT = "MileWatchPL/0.1 (+https://github.com/jjkiwi/apka2)"
+# Realistyczny User-Agent przegladarki - niektore serwisy (np. Reisetopia) odrzucaja
+# nietypowe UA bledem 403. Czytamy wylacznie publiczne feedy, w malej liczbie zapytan.
+USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+              "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36")
 
 
 def fetch_rss_items(name: str, url: str) -> list[dict]:

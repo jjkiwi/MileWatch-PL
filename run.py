@@ -1,19 +1,33 @@
+"""Pipeline MileWatch PL - w pelni darmowy, bez zadnego API.
+
+Fetch (RSS + scrape) -> Extract (slowa kluczowe) -> Dedup -> Storage -> Digest.
+Opcjonalnie: alert Telegram (jesli ustawiono zmienne srodowiskowe - darmowe).
+
+Uzycie:
+    python run.py                  # pelny przebieg, wypisuje digest w terminalu
+    from run import run_pipeline   # uzywane przez aplikacje desktop (gui.py)
+"""
+
 import logging
 import os
 import sys
 import uuid
 
-import anthropic
-from dotenv import load_dotenv
-
 import dedup
 import digest
 import storage
 import telegram_alert
+from deals import detect_deal
+from extract import extract_from_item
 from fetch_rss import fetch_rss_items
 from fetch_scrape import fetch_scrape_items
-from normalize import normalize_item
 from sources import load_profile, load_sources
+
+try:
+    from dotenv import load_dotenv
+except ImportError:  # dotenv jest opcjonalny - bez niego po prostu czytamy os.environ
+    def load_dotenv():
+        return False
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger("run")
@@ -34,25 +48,30 @@ def fetch_all(sources: list) -> list[dict]:
     return raw_items
 
 
-def main() -> int:
-    load_dotenv()
+def run_pipeline(progress=None) -> list:
+    """Wykonuje pelny przebieg i zwraca liste NOWO zapisanych promocji.
 
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        logger.error("Brak ANTHROPIC_API_KEY w zmiennych srodowiskowych. Ustaw go w .env lub eksportuj.")
-        return 1
+    progress: opcjonalna funkcja(str) do raportowania postepu (uzywana przez GUI).
+    Nie wymaga zadnego klucza API - dziala w 100% za darmo.
+    """
+    def _say(msg: str) -> None:
+        logger.info(msg)
+        if progress:
+            progress(msg)
 
     sources = load_sources()
-    profile = load_profile()
-    logger.info("Wczytano %d aktywnych zrodel", len(sources))
+    _say(f"Wczytano {len(sources)} aktywnych zrodel")
 
     raw_items = fetch_all(sources)
-    logger.info("Razem zebrano %d surowych itemow do normalizacji", len(raw_items))
+    _say(f"Zebrano {len(raw_items)} surowych itemow")
 
-    client = anthropic.Anthropic()
     candidates = []
     for raw_item in raw_items:
-        candidates.extend(normalize_item(client, raw_item))
-    logger.info("Normalizacja: wykryto %d kandydatow na promocje", len(candidates))
+        candidates.extend(extract_from_item(raw_item))   # promocje Miles & More
+        deal = detect_deal(raw_item)                     # bledy cenowe / tania biznes klasa
+        if deal:
+            candidates.append(deal)
+    _say(f"Wykryto {len(candidates)} kandydatow na promocje")
 
     for promo in candidates:
         promo.id = str(uuid.uuid4())
@@ -65,21 +84,52 @@ def main() -> int:
     for promo in unique:
         if storage.save_promotion(conn, promo):
             new_promotions.append(promo)
-    logger.info("Zapisano %d nowych promocji do bazy", len(new_promotions))
+    _say(f"Zapisano {len(new_promotions)} nowych promocji")
+
+    # Opcjonalne alerty - Telegram i/lub Signal (oba w pelni darmowe). Kazdy kanal wlacza
+    # sie samodzielnie, gdy ustawione sa jego zmienne srodowiskowe.
+    profile = load_profile()
+    _send_alerts(conn, profile, _say)
+
+    conn.close()
+    return new_promotions
+
+
+def _send_alerts(conn, profile, say) -> None:
+    tg_token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    tg_chat = os.environ.get("TELEGRAM_CHAT_ID")
+    sig_phone = os.environ.get("SIGNAL_PHONE")
+    sig_key = os.environ.get("SIGNAL_API_KEY")
+
+    channels = []
+    if tg_token and tg_chat:
+        channels.append(("Telegram", lambda p: telegram_alert.send_one(tg_token, tg_chat, p)))
+    if sig_phone and sig_key:
+        import signal_alert
+        channels.append(("Signal", lambda p: signal_alert.send_one(sig_phone, sig_key, p)))
+
+    if not channels:
+        say("Alerty wylaczone (brak konfiguracji Telegram/Signal) - pomijam")
+        return
+
+    pending = digest.filter_for_profile(storage.get_unnotified_promotions(conn), profile)
+    sent = 0
+    for promo in pending:
+        results = [fn(promo) for _, fn in channels]
+        if any(results):
+            storage.mark_notified(conn, promo.id)
+            sent += 1
+    say(f"Alerty ({', '.join(n for n, _ in channels)}): wyslano {sent}/{len(pending)}")
+
+
+def main() -> int:
+    load_dotenv()
+    profile = load_profile()
+    new_promotions = run_pipeline()
 
     relevant = digest.filter_for_profile(new_promotions, profile)
     print()
     print(digest.format_digest(relevant))
-
-    telegram_token = os.environ.get("TELEGRAM_BOT_TOKEN")
-    telegram_chat_id = os.environ.get("TELEGRAM_CHAT_ID")
-    if telegram_token and telegram_chat_id:
-        pending = digest.filter_for_profile(storage.get_unnotified_promotions(conn), profile)
-        sent = telegram_alert.send_alerts(conn, telegram_token, telegram_chat_id, pending)
-        logger.info("Telegram: wyslano %d/%d alertow", sent, len(pending))
-    else:
-        logger.info("Telegram nieskonfigurowany (brak TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID) - pomijam alerty")
-
     return 0
 
 

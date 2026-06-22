@@ -1,0 +1,56 @@
+name: Aktualizuj promocje (GitHub Pages)
+
+# Darmowy, automatyczny scraping + publikacja wspoldzielonej strony.
+# Strona laduje na GitHub Pages: Settings -> Pages -> Source: "Deploy from a branch",
+# branch = main, folder = /docs.
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # codziennie 06:00 UTC
+  workflow_dispatch: {}    # mozliwosc uruchomienia recznie z zakladki Actions
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalacja zaleznosci
+        run: pip install -r requirements.txt
+
+      # Cache bazy SQLite miedzy uruchomieniami - dzieki temu dziala deduplikacja,
+      # historia promocji narasta, a stan "co juz wyslano" sie nie resetuje.
+      # Klucz rotacyjny (run_id) + restore-keys: kazdy przebieg ZAPISUJE nowy cache
+      # i przywraca najnowszy poprzedni (stały klucz nigdy by sie nie aktualizowal).
+      - name: Przywroc baze danych
+        uses: actions/cache@v4
+        with:
+          path: data
+          key: milewatch-db-${{ github.run_id }}
+          restore-keys: |
+            milewatch-db-
+
+      - name: Scraping + generowanie strony + alerty
+        # Sekrety sa opcjonalne - ustaw je w repo (Settings -> Secrets and variables ->
+        # Actions), aby dostawac alerty Telegram i/lub Signal o nowych promocjach.
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SIGNAL_PHONE: ${{ secrets.SIGNAL_PHONE }}
+          SIGNAL_API_KEY: ${{ secrets.SIGNAL_API_KEY }}
+        run: python publish.py
+
+      - name: Commit strony (docs/index.html)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f docs/index.html
+          git commit -m "Aktualizacja promocji [skip ci]" || echo "Brak zmian do zacommitowania"
+          git push

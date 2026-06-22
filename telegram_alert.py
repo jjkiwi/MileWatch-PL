@@ -24,6 +24,23 @@ def format_message(promo: Promotion) -> str:
     )
 
 
+def send_one(token: str, chat_id: str, promo: Promotion) -> bool:
+    """Wysyla pojedynczy alert na Telegram (bez oznaczania w bazie). Zwraca True przy sukcesie."""
+    url = API_URL.format(token=token)
+    try:
+        resp = httpx.post(
+            url,
+            json={"chat_id": chat_id, "text": format_message(promo),
+                  "disable_web_page_preview": True},
+            timeout=15,
+        )
+        resp.raise_for_status()
+    except httpx.HTTPError as e:
+        logger.warning("Telegram: nie udalo sie wyslac alertu '%s': %s", promo.tytul, e)
+        return False
+    return True
+
+
 def send_alerts(
     conn: sqlite3.Connection, token: str, chat_id: str, promotions: list[Promotion]
 ) -> int:

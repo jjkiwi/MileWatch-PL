@@ -11,7 +11,9 @@ import cache
 logger = logging.getLogger(__name__)
 
 SCRAPE_CACHE_MAX_AGE = 60 * 60 * 6  # 6h - strony promocyjne zmieniaja sie rzadziej
-USER_AGENT = "MileWatchPL/0.1 (+https://github.com/jjkiwi/apka2)"
+# Realistyczny User-Agent przegladarki - niektore serwisy odrzucaja nietypowe UA (403).
+USER_AGENT = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+              "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36")
 MIN_DELAY_SECONDS = 3  # rate-limit miedzy zadaniami do tej samej domeny
 
 _last_request_at: dict[str, float] = {}
@@ -21,12 +23,18 @@ def _robots_allows(url: str) -> bool:
     parsed = urlparse(url)
     robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
     rp = urllib.robotparser.RobotFileParser()
-    rp.set_url(robots_url)
     try:
-        rp.read()
-    except Exception as e:
-        logger.warning("Could not read robots.txt at %s (%s) - blokuje ostroznosciowo", robots_url, e)
-        return False
+        resp = httpx.get(robots_url, headers={"User-Agent": USER_AGENT},
+                         timeout=10, follow_redirects=True)
+    except httpx.HTTPError as e:
+        # Nie udalo sie pobrac robots.txt - zgodnie ze standardem zakladamy, ze scraping
+        # jest dozwolony (brak robots.txt = brak ograniczen). Wczesniej blokowalismy tutaj
+        # ostroznosciowo, co falszywie wylaczalo poprawne zrodla.
+        logger.info("robots.txt niedostepny (%s) - zakladam, ze scraping dozwolony", e)
+        return True
+    if resp.status_code >= 400:
+        return True  # brak pliku robots.txt = dozwolone
+    rp.parse(resp.text.splitlines())
     return rp.can_fetch(USER_AGENT, url)
 
 

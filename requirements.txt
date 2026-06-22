@@ -1,8 +1,9 @@
+# MileWatch PL - wszystkie zaleznosci sa darmowe i open-source.
+# Aplikacja desktop uzywa Tkinter, ktory jest czescia biblioteki standardowej Pythona
+# (nie ma go na tej liscie, bo nie instaluje sie go przez pip).
 httpx==0.27.2
 beautifulsoup4==4.12.3
 feedparser==6.0.11
 PyYAML==6.0.2
 rapidfuzz==3.14.5
-anthropic==0.40.0
-python-dotenv==1.0.1
-Flask==3.0.3
+python-dotenv==1.0.1   # wczytuje .env z konfiguracja alertow Telegram/Signal

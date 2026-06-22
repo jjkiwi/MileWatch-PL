@@ -1,7 +1,13 @@
 from models import Promotion
 
+# Kategorie "perelek" - zawsze warte alertu, niezaleznie od profilu (region/partner).
+ALWAYS_ALERT = {"error_fare", "business_class"}
+
 
 def is_relevant(promo: Promotion, profile: dict) -> bool:
+    if promo.typ in ALWAYS_ALERT:
+        return True
+
     typy = profile.get("typy_promocji") or []
     if typy and promo.typ not in typy:
         return False

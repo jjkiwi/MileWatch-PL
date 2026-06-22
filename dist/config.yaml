@@ -1,0 +1,46 @@
+# MileWatch PL - konfiguracja zrodel i profilu uzytkownika
+#
+# Wszystkie ponizsze adresy zostaly zweryfikowane na zywo (zwracaja RSS/HTML).
+# RSS jest preferowany (lekki). Scraping HTML jest uzywany dla zrodel bez feedu.
+
+sources:
+  # InsideFlyer.de - feed CELOWANY na Miles & More (niemiecki, najwiecej promocji M&M).
+  - name: "InsideFlyer.de (Miles & More)"
+    type: rss
+    url: "https://insideflyer.de/tag/miles-more/feed/"
+    enabled: true
+
+  # InsideFlyer.com - ten sam tag po angielsku.
+  - name: "InsideFlyer.com (Miles & More)"
+    type: rss
+    url: "https://insideflyer.com/tag/miles-more/feed/"
+    enabled: true
+
+  # Fly4free.pl - polskie okazje podrozne (filtr extract.py wybiera te o Miles & More).
+  - name: "Fly4free.pl"
+    type: rss
+    url: "https://www.fly4free.pl/feed/"
+    enabled: true
+
+  # Scraping HTML strony kategorii (robots.txt InsideFlyer pozwala: "Allow: /").
+  - name: "InsideFlyer.de - kategoria M&M (scrape)"
+    type: scrape
+    url: "https://insideflyer.de/tag/miles-more/"
+    enabled: true
+
+# Profil uzytkownika - okresla ktore promocje sa wyrozniane jako "Twoje".
+profile:
+  typy_promocji:
+    - buy_miles
+    - mileage_bargain
+    - partner_bonus
+  partnerzy:
+    - "Lufthansa"
+    - "LOT"
+    - "Hertz"
+    - "Marriott"
+  regiony:
+    - "Europa"
+    - "Polska"
+  trasy: []
+  min_bonus_pct: 20
