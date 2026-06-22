@@ -6,6 +6,10 @@ ALWAYS_ALERT = {"error_fare", "great_deal", "business_class"}
 
 def is_relevant(promo: Promotion, profile: dict) -> bool:
     if promo.typ in ALWAYS_ALERT:
+        # Perelka z wylotem spoza regionu (Polska + kraje oscienne) - zostaje w bazie i na
+        # stronie, ale jej NIE alarmujemy (mniej ja promujemy). Reszta perelek = alert.
+        if "Wylot zagraniczny" in (promo.regiony or []):
+            return False
         return True
 
     typy = profile.get("typy_promocji") or []

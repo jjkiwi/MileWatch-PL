@@ -178,8 +178,18 @@ class MileWatchApp:
             if q and q not in (p.tytul or "").lower() and q not in (p.streszczenie or "").lower():
                 continue
             out.append(p)
-        # Perelki (bledy cenowe / tania biznes) na gorze listy.
-        out.sort(key=lambda p: 0 if p.typ in PERLY else 1)
+
+        # Sortowanie: perelki z preferowanym wylotem na gorze, perelki zagraniczne nizej,
+        # reszta na koncu.
+        def _rank(p):
+            perla = p.typ in PERLY
+            zagr = "Wylot zagraniczny" in (p.regiony or [])
+            if perla and not zagr:
+                return 0
+            if perla and zagr:
+                return 1
+            return 2
+        out.sort(key=_rank)
         return out
 
     def apply_filters(self):

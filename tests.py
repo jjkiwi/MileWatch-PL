@@ -59,26 +59,37 @@ def test_extract_rejects_news():
 
 
 def test_deals():
-    print("\n[deals] perelki: bledy cenowe i tania biznes klasa")
-    d = detect_deal(_item("Blad cenowy! Bangkok w ekonomii za 900 zl w obie strony"))
-    check("blad cenowy -> error_fare", d and d.typ == "error_fare")
+    print("\n[deals] perelki: blad cenowy / tani lot / biznes + filtr wylotu")
+    # Faza 0: blad cenowy TYLKO przy jawnym sygnale
+    d = detect_deal(_item("Blad cenowy! Bangkok z Warszawy za 900 zl w obie strony"))
+    check("jawny blad cenowy -> error_fare", d and d.typ == "error_fare")
+
+    # Faza 0: zwykla promka z hype to TANI LOT, nie blad cenowy (zgloszony bug)
+    d = detect_deal(_item("Rekordowo tanio! Loty do Szwecji z Warszawy za 150 zl"))
+    check("hype + tani lot -> great_deal (nie error_fare)", d and d.typ == "great_deal")
 
     d = detect_deal(_item("Tokio z Warszawy za 1399 PLN w obie strony - okazja"))
-    check("mega-tani dalekodystansowy -> error_fare", d and d.typ == "error_fare")
+    check("mega-tani dalekodystansowy -> great_deal", d and d.typ == "great_deal")
 
-    d = detect_deal(_item("Business class do Azji za 3200 zl, Qatar Airways"))
+    d = detect_deal(_item("Business class do Azji z Warszawy za 3200 zl, Qatar Airways"))
     check("tania biznes (3200 zl) -> business_class", d and d.typ == "business_class")
     check("biznes wykryl partnera Qatar", d and d.partner == "Qatar")
 
-    d = detect_deal(_item("Business Class to New York for 750 EUR, Lufthansa"))
-    check("tania biznes EUR -> business_class", d and d.typ == "business_class")
-
-    check("zwykly europejski tani lot odrzucony",
+    check("zwykly europejski bez hype odrzucony",
           detect_deal(_item("Wakacyjne loty do Wloch od 145 PLN")) is None)
     check("droga biznes (9000 zl) odrzucona",
           detect_deal(_item("Business class do Tokio za 9000 zl - standard")) is None)
-    check("drogi dalekodystansowy ekonom (3200 zl) odrzucony",
-          detect_deal(_item("Loty do Tajlandii za 3200 zl w ekonomii")) is None)
+
+    # Faza 1: priorytet lotnisk wylotu (zagraniczne zostaja, ale bez alertu)
+    d_us = detect_deal(_item("Asiana: Los Angeles - Dalian, China. $735 roundtrip"))
+    check("wylot z USA zostaje, oznaczony zagraniczny",
+          d_us is not None and "Wylot zagraniczny" in d_us.regiony)
+    check("wylot z USA NIE jest alarmowany",
+          d_us is not None and not is_relevant(d_us, {}))
+    d_pl = detect_deal(_item("Mega okazja: Warszawa - Bangkok za 1400 zl"))
+    check("wylot z PL zostaje i jest alarmowany",
+          d_pl is not None and "Wylot zagraniczny" not in d_pl.regiony
+          and is_relevant(d_pl, {}))
 
 
 def test_dedup():

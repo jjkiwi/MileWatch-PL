@@ -64,6 +64,60 @@ AIRLINES = [
     "Finnair", "Iberia", "United", "American Airlines", "Delta",
 ]
 
+# --- Filtr lotnisk wylotu (Faza 1) -------------------------------------------
+# Perelki (tanie loty / bledy cenowe / biznes) maja sens, gdy wylot jest z Polski lub
+# krajow oscienncych (Niemcy, Czechy, Slowacja, Austria, Litwa). Mozesz wylaczyc filtr
+# ustawiajac FILTER_DEPARTURE = False, albo dopisac swoje lotniska do PREFERRED_DEP.
+FILTER_DEPARTURE = True
+
+PREFERRED_DEP = [
+    # Polska (miasta + kody IATA)
+    "warszawa", "warsaw", "warschau", "krakow", "kraków", "cracow", "krakau",
+    "gdansk", "gdańsk", "danzig", "wroclaw", "wrocław", "breslau", "katowice", "kattowitz",
+    "poznan", "poznań", "posen", "rzeszow", "rzeszów", "szczecin", "stettin",
+    "bydgoszcz", "lublin", "lodz", "łódź", "modlin", "z polski", "aus polen", "from poland",
+    "waw", "wmi", "krk", "gdn", "wro", "ktw", "poz", "rze", "szz", "bzg", "lcj",
+    # Niemcy
+    "berlin", "drezno", "dresden", "frankfurt", "monachium", "munchen", "münchen",
+    "munich", "lipsk", "leipzig", "hamburg", "ber", "fra", "muc",
+    # Czechy
+    "praga", "prague", "prag", "ostrawa", "ostrava", "brno", "prg", "osr",
+    # Slowacja
+    "bratyslawa", "bratysława", "bratislava", "bts", "koszyce", "kosice",
+    # Austria
+    "wieden", "wiedeń", "wien", "vienna", "vie",
+    # Litwa
+    "wilno", "vilnius", "vno", "kowno", "kaunas",
+]
+
+# Wyrazne lotniska/miasta wylotu spoza regionu (czeste w feedach US/UK).
+FARAWAY_DEP = [
+    "san francisco", "los angeles", "new york", "newark", "miami", "chicago", "boston",
+    "washington", "dallas", "seattle", "atlanta", "houston", "denver", "san diego",
+    "portland", "sfo", "lax", "jfk", "ewr",
+    "london", "londyn", "manchester", "edinburgh", "dublin",
+    "madrid", "madryt", "barcelona", "lisbona", "lizbona", "lisbon", "lisboa",
+    "paris", "paryz", "paryż", "amsterdam", "rzym", "mediolan", "milan", "milano",
+    "bruksela", "brussels", "zurich", "zürich", "genewa", "geneva",
+    "oslo", "sztokholm", "stockholm", "kopenhaga", "copenhagen", "helsinki",
+]
+
+_SEP_HINT = ("–", " - ", " to ", " do ", "from ", "ab ", "von ", "ex ")
+
+
+def _departure(low: str):
+    """Zwraca (relevant, preferowane_miasto_lub_None).
+
+    relevant=False tylko gdy wykryto WYRAZNY wylot spoza regionu (miasto faraway przy
+    separatorze trasy / "from"). Brak danych = zostawiamy (relevant=True).
+    """
+    pref = next((c for c in PREFERRED_DEP if c in low), None)
+    if pref:
+        return True, pref
+    if any(s in low for s in _SEP_HINT) and any(c in low for c in FARAWAY_DEP):
+        return False, None
+    return True, None
+
 # --- Ceny --------------------------------------------------------------------
 
 PLN_RE = re.compile(r"(\d[\d\s. ]{0,8}\d|\d)\s*(?:z[lł]|pln)", re.IGNORECASE)
@@ -154,6 +208,16 @@ def detect_deal(raw_item: dict, cfg: dict | None = None) -> Promotion | None:
     if typ is None:
         return None
 
+    # Faza 1: priorytet wylotu. NIE odrzucamy ofert spoza regionu - zostawiamy je, ale
+    # oznaczamy jako "Wylot zagraniczny". Takie perelki sa pokazywane (strona/GUI), tylko
+    # nizej i BEZ alertu na Telegram/Signal (patrz digest.is_relevant). Wylot z Polski/krajow
+    # oscienncych albo nieznany = pelny priorytet (alert).
+    wylot_pref = None
+    wylot_zagraniczny = False
+    if FILTER_DEPARTURE:
+        relevant, wylot_pref = _departure(low)
+        wylot_zagraniczny = not relevant
+
     # Cena do streszczenia (pierwsza dostepna waluta)
     if pln is not None:
         cena_txt = f"{pln} zl"
@@ -174,6 +238,8 @@ def detect_deal(raw_item: dict, cfg: dict | None = None) -> Promotion | None:
     regiony = []
     if is_longhaul:
         regiony.append("Dalekie loty")
+    if wylot_zagraniczny:
+        regiony.append("Wylot zagraniczny")
 
     labels = {
         "error_fare": "Blad cenowy (mistake fare)",
@@ -185,6 +251,8 @@ def detect_deal(raw_item: dict, cfg: dict | None = None) -> Promotion | None:
         parts.append(f"od {cena_txt}")
     if partner:
         parts.append(f"({partner})")
+    if wylot_pref:
+        parts.append(f"- wylot: {wylot_pref.capitalize()}")
     streszczenie = " ".join(parts) + "."
 
     return Promotion(

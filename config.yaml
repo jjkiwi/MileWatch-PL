@@ -87,9 +87,10 @@ sources:
 
 # Profil uzytkownika - okresla ktore promocje Miles & More sa wyrozniane jako "Twoje".
 #
-# Uwaga: kategorie "perelki" (error_fare = bledy cenowe/mega okazje, business_class =
-# tania klasa biznes) sa ZAWSZE alertowane, niezaleznie od tego profilu. Ich progi cenowe
-# ustawisz w pliku deals.py (DEFAULT: mega <=1500 zl/350 EUR, biznes <=4000 zl/900 EUR).
+# Uwaga: kategorie "perelki" (error_fare = jawne bledy cenowe, great_deal = tani lot/mega,
+# business_class = tania klasa biznes) sa ZAWSZE alertowane, niezaleznie od tego profilu.
+# Progi cenowe oraz FILTR LOTNISK WYLOTU (Polska + kraje oscienne) ustawisz w deals.py
+# (DEFAULT: mega <=1500 zl/350 EUR, biznes <=4000 zl/900 EUR; PREFERRED_DEP = lista wylotow).
 profile:
   typy_promocji:
     - buy_miles

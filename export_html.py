@@ -135,8 +135,13 @@ function fill(sel, vals){ for(const v of vals){ const o=document.createElement("
   o.value=v; o.textContent=v; sel.appendChild(o);} }
 
 const PERLY = {error_fare:1, great_deal:1, business_class:1};
-// Perelki (bledy cenowe / tania biznes) na gorze.
-DATA.sort((a,b)=>(PERLY[a.typ]?0:1)-(PERLY[b.typ]?0:1));
+// Sortowanie: perelki z preferowanym wylotem na gorze, perelki zagraniczne nizej, reszta na koncu.
+function _rank(p){
+  const perla = !!PERLY[p.typ];
+  const zagr = (p.regiony||[]).includes("Wylot zagraniczny");
+  return perla ? (zagr ? 1 : 0) : 2;
+}
+DATA.sort((a,b)=>_rank(a)-_rank(b));
 
 fill(document.getElementById("fTyp"), uniq(DATA.map(p=>p.typ)));
 fill(document.getElementById("fPartner"), uniq(DATA.map(p=>p.partner)));
