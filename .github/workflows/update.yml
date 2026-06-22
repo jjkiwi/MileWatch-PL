@@ -1,8 +1,10 @@
 name: Aktualizuj promocje (GitHub Pages)
 
-# Darmowy, automatyczny scraping + publikacja wspoldzielonej strony.
-# Strona laduje na GitHub Pages: Settings -> Pages -> Source: "Deploy from a branch",
-# branch = main, folder = /docs.
+# Darmowy, automatyczny scraping + alerty + publikacja wspoldzielonej strony.
+# Strona jest publikowana bezposrednio na GitHub Pages (BEZ commitowania do galezi),
+# dzieki czemu workflow nigdy nie wchodzi w konflikt z Twoimi wlasnymi commitami.
+#
+# WYMAGANE USTAWIENIE (jednorazowo): Settings -> Pages -> Source: "GitHub Actions".
 
 on:
   schedule:
@@ -10,11 +12,21 @@ on:
   workflow_dispatch: {}    # mozliwosc uruchomienia recznie z zakladki Actions
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+# Tylko jeden deploy na raz; nie przerywaj trwajacego.
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -25,10 +37,9 @@ jobs:
       - name: Instalacja zaleznosci
         run: pip install -r requirements.txt
 
-      # Cache bazy SQLite miedzy uruchomieniami - dzieki temu dziala deduplikacja,
-      # historia promocji narasta, a stan "co juz wyslano" sie nie resetuje.
-      # Klucz rotacyjny (run_id) + restore-keys: kazdy przebieg ZAPISUJE nowy cache
-      # i przywraca najnowszy poprzedni (stały klucz nigdy by sie nie aktualizowal).
+      # Cache bazy SQLite miedzy uruchomieniami - dedup i stan "co juz wyslano" sie nie
+      # resetuje. Klucz rotacyjny (run_id) + restore-keys: kazdy przebieg ZAPISUJE nowy
+      # cache i przywraca najnowszy poprzedni. Dzieki temu NIE musimy commitowac bazy.
       - name: Przywroc baze danych
         uses: actions/cache@v4
         with:
@@ -47,10 +58,14 @@ jobs:
           SIGNAL_API_KEY: ${{ secrets.SIGNAL_API_KEY }}
         run: python publish.py
 
-      - name: Commit strony (docs/index.html)
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f docs/index.html
-          git commit -m "Aktualizacja promocji [skip ci]" || echo "Brak zmian do zacommitowania"
-          git push
+      - name: Konfiguracja Pages
+        uses: actions/configure-pages@v5
+
+      - name: Wyslij strone jako artefakt
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Publikacja na GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
