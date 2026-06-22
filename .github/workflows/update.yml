@@ -10,7 +10,9 @@ on:
   schedule:
     - cron: "37 * * * *"  # co godzine o :37 (minuta poza szczytem = mniej opoznien GitHuba).
                           # Inne: "0 6 * * *" = raz dziennie 06:00 UTC, "*/30 * * * *" = co 30 min.
-  workflow_dispatch: {}    # mozliwosc uruchomienia recznie z zakladki Actions
+  workflow_dispatch: {}    # reczne uruchomienie z zakladki Actions
+  repository_dispatch:     # niezawodny wyzwalacz zewnetrzny (np. darmowy cron-job.org),
+    types: [run-now]       # wywoluje: POST /repos/<user>/<repo>/dispatches {"event_type":"run-now"}
 
 permissions:
   contents: read
