@@ -48,10 +48,46 @@ sources:
     url: "https://www.fly4free.pl/feed/"
     enabled: true
 
+  - name: "InsideFlyer.de (ogolny)"
+    type: rss
+    url: "https://insideflyer.de/feed/"
+    enabled: true
+
   # --- Dodatkowe zrodla polskie ---
   - name: "Masa Perlowa"
     type: rss
     url: "https://www.masaperlowa.pl/feed/"
+    enabled: true
+
+  - name: "Subiektywnie o Finansach"
+    type: rss
+    url: "https://subiektywnieofinansach.pl/feed/"
+    enabled: true
+
+  - name: "Travelfree"
+    type: rss
+    url: "https://travelfree.info/feed/"
+    enabled: true
+
+  # --- Zrodla zagraniczne (EN; perelki spoza regionu sa de-priorytetyzowane w Fazie 1) ---
+  - name: "One Mile at a Time"
+    type: rss
+    url: "https://onemileatatime.com/feed/"
+    enabled: true
+
+  - name: "Frequent Miler"
+    type: rss
+    url: "https://frequentmiler.com/feed/"
+    enabled: true
+
+  - name: "Thrifty Traveler"
+    type: rss
+    url: "https://thriftytraveler.com/feed/"
+    enabled: true
+
+  - name: "View from the Wing"
+    type: rss
+    url: "https://viewfromthewing.com/feed/"
     enabled: true
 
   # Ponizsze WYLACZONE - zweryfikowane jako niedzialajace (czerwiec 2026):
@@ -79,10 +115,15 @@ sources:
     url: "https://www.theflightdeal.com/feed/"
     enabled: true
 
-  # --- Scraping HTML (realizuje wymog scrapingu; robots.txt InsideFlyer pozwala) ---
+  # --- Scraping HTML (robots.txt zrodel na to pozwala) ---
   - name: "InsideFlyer.de - kategoria M&M (scrape)"
     type: scrape
     url: "https://insideflyer.de/tag/miles-more/"
+    enabled: true
+
+  - name: "Pasazer.com - Miles & More (scrape)"
+    type: scrape
+    url: "https://www.pasazer.com/tag/miles-more"
     enabled: true
 
 # Profil uzytkownika - okresla ktore promocje Miles & More sa wyrozniane jako "Twoje".
