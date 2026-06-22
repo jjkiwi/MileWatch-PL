@@ -48,22 +48,30 @@ sources:
     url: "https://www.fly4free.pl/feed/"
     enabled: true
 
-  # --- Dodatkowe zrodla polskie (sprawdz w diag.py czy zwracaja itemy; niektore moga
-  #     blokowac boty - wtedy daj enabled: false albo popraw adres feedu) ---
+  # --- Dodatkowe zrodla polskie ---
+  - name: "Masa Perlowa"
+    type: rss
+    url: "https://www.masaperlowa.pl/feed/"
+    enabled: true
+
+  # Ponizsze WYLACZONE - zweryfikowane jako niedzialajace (czerwiec 2026):
+  #  * punktozercy.pl, mile.pl - domena nie istnieje (DNS getaddrinfo failed),
+  #  * FlyerTalk - blokuje boty (HTTP 403).
+  # Jesli znasz poprawny adres feedu, popraw url i ustaw enabled: true.
   - name: "Punktozercy"
     type: rss
     url: "https://punktozercy.pl/feed/"
-    enabled: true
+    enabled: false
 
   - name: "Mile.pl"
     type: rss
     url: "https://mile.pl/feed/"
-    enabled: true
+    enabled: false
 
   - name: "FlyerTalk - Miles & More"
     type: rss
     url: "https://www.flyertalk.com/forum/external.php?type=RSS2&forumids=251"
-    enabled: true
+    enabled: false
 
   # --- Zrodla perelek: bledy cenowe / tania biznes klasa (filtr deals.py) ---
   - name: "The Flight Deal"
