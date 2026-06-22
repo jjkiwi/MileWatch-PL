@@ -151,6 +151,12 @@ def detect_deal(raw_item: dict, cfg: dict | None = None) -> Promotion | None:
     else:
         cena_txt = None
 
+    tytul = _first_line(text)
+    tl = tytul.lower()
+    if any(m in tl for m in ("archive", "archiwum", "kategoria", "category",
+                             "- insideflyer", "tag:", "feed", "strona ")):
+        return None  # smiec ze strony-listy/archiwum, nie oferta
+
     partner = _airline(text)
     regiony = []
     if is_longhaul:
@@ -168,7 +174,7 @@ def detect_deal(raw_item: dict, cfg: dict | None = None) -> Promotion | None:
 
     return Promotion(
         id="",
-        tytul=_first_line(text),
+        tytul=tytul,
         typ=typ,
         bonus_pct=None,
         partner=partner,

@@ -212,6 +212,13 @@ def extract_from_item(raw_item: dict) -> list[Promotion]:
         return []
 
     tytul = _first_meaningful_line(text)
+
+    # Odsiewanie smieci ze stron-list/archiwow (scraping strony kategorii oddaje jako "tytul"
+    # naglowek strony, np. "Miles & More Archive - InsideFlyer DE"), to nie jest oferta.
+    tl = tytul.lower()
+    if any(m in tl for m in ("archive", "archiwum", "kategoria", "category",
+                             "- insideflyer", "tag:", "feed", "strona ")):
+        return []
     streszczenie = _build_summary(typ, bonus, partner, wazne_do)
 
     return [
