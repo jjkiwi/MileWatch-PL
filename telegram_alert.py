@@ -10,16 +10,31 @@ logger = logging.getLogger(__name__)
 
 API_URL = "https://api.telegram.org/bot{token}/sendMessage"
 
+# Tag kategorii doklejany na POCZATKU tytulu kazdej wiadomosci.
+CATEGORY_TAGS = {
+    "error_fare": "[‼️ BŁĄD CENOWY]",
+    "business_class": "[💺 BIZNES KLASA]",
+    "buy_miles": "[🛒 KUP MILE]",
+    "partner_bonus": "[🤝 BONUS PARTNERA]",
+    "mileage_bargain": "[🎯 OKAZJA MILOWA]",
+    "card": "[💳 KARTA]",
+    "other": "[✈️ MILES & MORE]",
+}
+
+
+def category_tag(typ: str) -> str:
+    return CATEGORY_TAGS.get(typ, "[✈️ MILES & MORE]")
+
 
 def format_message(promo: Promotion) -> str:
-    bonus = f" +{promo.bonus_pct}%" if promo.bonus_pct else ""
+    tag = category_tag(promo.typ)
+    bonus = f"\nBonus: +{promo.bonus_pct}%" if promo.bonus_pct else ""
     partner = f"\nPartner: {promo.partner}" if promo.partner else ""
     wazne_do = f"\nWazne do: {promo.wazne_do}" if promo.wazne_do else ""
     return (
-        f"Nowa promocja Miles & More{bonus}\n"
-        f"{promo.tytul}\n\n"
+        f"{tag} {promo.tytul}\n\n"
         f"{promo.streszczenie}"
-        f"{partner}{wazne_do}\n\n"
+        f"{bonus}{partner}{wazne_do}\n\n"
         f"Zrodlo ({promo.zrodlo_nazwa}): {promo.zrodlo_url}"
     )
 

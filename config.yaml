@@ -48,6 +48,23 @@ sources:
     url: "https://www.fly4free.pl/feed/"
     enabled: true
 
+  # --- Dodatkowe zrodla polskie (sprawdz w diag.py czy zwracaja itemy; niektore moga
+  #     blokowac boty - wtedy daj enabled: false albo popraw adres feedu) ---
+  - name: "Punktozercy"
+    type: rss
+    url: "https://punktozercy.pl/feed/"
+    enabled: true
+
+  - name: "Mile.pl"
+    type: rss
+    url: "https://mile.pl/feed/"
+    enabled: true
+
+  - name: "FlyerTalk - Miles & More"
+    type: rss
+    url: "https://www.flyertalk.com/forum/external.php?type=RSS2&forumids=251"
+    enabled: true
+
   # --- Zrodla perelek: bledy cenowe / tania biznes klasa (filtr deals.py) ---
   - name: "The Flight Deal"
     type: rss
