@@ -8,7 +8,8 @@ name: Aktualizuj promocje (GitHub Pages)
 
 on:
   schedule:
-    - cron: "0 6 * * *"   # codziennie 06:00 UTC
+    - cron: "0 * * * *"   # co godzine (o pelnej godzinie). Inne opcje: "0 6 * * *" = raz
+                          # dziennie 06:00 UTC, "*/30 * * * *" = co 30 min (min. praktyczne ~5 min).
   workflow_dispatch: {}    # mozliwosc uruchomienia recznie z zakladki Actions
 
 permissions:
