@@ -83,9 +83,11 @@ TEMPLATE = r"""<!DOCTYPE html>
            padding: .9rem 1rem; margin-bottom: .8rem; }
   .promo.profil { border-left: 4px solid #2a7a2a; }
   .promo.error { border-left: 4px solid #c0392b; background: #fff5f5; }
+  .promo.tani { border-left: 4px solid #d35400; background: #fff8f2; }
   .promo.biznes { border-left: 4px solid #c79100; background: #fffdf3; }
   @media (prefers-color-scheme: dark) {
     .promo.error { background: #2c2020 !important; }
+    .promo.tani { background: #2b2420 !important; }
     .promo.biznes { background: #2b2820 !important; }
   }
   .promo-head { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
@@ -126,13 +128,13 @@ TEMPLATE = r"""<!DOCTYPE html>
 const DATA = __DATA__;
 const TYPE_LABELS = { buy_miles:"kup mile", partner_bonus:"bonus partnera",
   mileage_bargain:"okazja milowa", card:"karta", other:"inne",
-  error_fare:"BLAD CENOWY / mega", business_class:"tania biznes" };
+  error_fare:"BLAD CENOWY", great_deal:"tani lot / mega", business_class:"tania biznes" };
 
 function uniq(arr){ return [...new Set(arr.filter(Boolean))].sort(); }
 function fill(sel, vals){ for(const v of vals){ const o=document.createElement("option");
   o.value=v; o.textContent=v; sel.appendChild(o);} }
 
-const PERLY = {error_fare:1, business_class:1};
+const PERLY = {error_fare:1, great_deal:1, business_class:1};
 // Perelki (bledy cenowe / tania biznes) na gorze.
 DATA.sort((a,b)=>(PERLY[a.typ]?0:1)-(PERLY[b.typ]?0:1));
 
@@ -158,7 +160,8 @@ function render(){
     if(q && !((p.tytul||"").toLowerCase().includes(q) || (p.streszczenie||"").toLowerCase().includes(q))) continue;
     shown++;
     const li=document.createElement("li");
-    const cls = p.typ==="error_fare" ? " error" : p.typ==="business_class" ? " biznes" : (p.profil?" profil":"");
+    const cls = p.typ==="error_fare" ? " error" : p.typ==="great_deal" ? " tani"
+              : p.typ==="business_class" ? " biznes" : (p.profil?" profil":"");
     li.className="promo"+cls;
     const bonus = p.bonus_pct ? `<span class="bonus">+${p.bonus_pct}%</span>` : "";
     const tag = PERLY[p.typ] ? `<span class="tag-profil">&#9733; perelka</span>`

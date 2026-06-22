@@ -28,12 +28,19 @@ DEFAULT = {
 
 # --- Sygnaly -----------------------------------------------------------------
 
-# Jawne sygnaly bledu cenowego / mistake fare (najmocniejszy trigger).
+# JAWNE bledy cenowe / mistake fare - tylko to daje tag [BLAD CENOWY]. Naprawde rzadkie.
 ERROR_SIGNALS = [
     "error fare", "mistake fare", "blad cenowy", "błąd cenowy", "blad w cenie",
     "błąd w cenie", "pomylka cenowa", "pomyłka cenowa", "cena z bledu", "cena z błędu",
-    "fehlerfare", "fehlbuchung", "fehlpreis",
+    "fehlerfare", "fehlbuchung", "fehlpreis", "price mistake",
+]
+
+# Slowa-hype (marketing serwisow). NIE oznaczaja bledu cenowego - tylko "tani lot"/okazje.
+# Wczesniej myslnie wpadaly do bledow cenowych (np. zwykla Szwecja za 150 zl z "rekordowo tanio").
+HYPE_SIGNALS = [
     "najtaniej w historii", "rekordowo tanio", "rekordowa cena", "bezprecedensowa cena",
+    "mega okazja", "mega promocja", "hit cenowy", "super cena", "wyjatkowa okazja",
+    "okazja", "promocja dnia", "last minute hit",
 ]
 
 BUSINESS_SIGNALS = [
@@ -116,27 +123,33 @@ def detect_deal(raw_item: dict, cfg: dict | None = None) -> Promotion | None:
     pln = _cheapest(text, [PLN_RE])
     eur = _cheapest(text, [EUR_RE_A, EUR_RE_B])
     usd = _cheapest(text, [USD_RE_A, USD_RE_B])
-    is_error = _contains_any(low, ERROR_SIGNALS)
+    is_error = _contains_any(low, ERROR_SIGNALS)   # TYLKO jawny blad cenowy
+    is_hype = _contains_any(low, HYPE_SIGNALS)     # marketing: "rekordowo tanio" itp.
     is_business = _contains_any(low, BUSINESS_SIGNALS)
     is_longhaul = _contains_any(low, LONGHAUL)
+    has_price = pln is not None or eur is not None or usd is not None
+    mega = ((pln is not None and pln <= cfg["max_mega_pln"]) or
+            (eur is not None and eur <= cfg["max_mega_eur"]) or
+            (usd is not None and usd <= cfg["max_mega_usd"]))
 
     typ = None
 
-    # 1) Tania biznes klasa (priorytet - bardziej konkretna kategoria).
+    # 1) Tania biznes klasa (priorytet - najbardziej konkretna kategoria).
     if is_business:
-        cheap = ((pln is not None and pln <= cfg["max_business_pln"]) or
-                 (eur is not None and eur <= cfg["max_business_eur"]) or
-                 (usd is not None and usd <= cfg["max_business_usd"]))
-        if cheap or is_error:
+        cheap_biz = ((pln is not None and pln <= cfg["max_business_pln"]) or
+                     (eur is not None and eur <= cfg["max_business_eur"]) or
+                     (usd is not None and usd <= cfg["max_business_usd"]))
+        if cheap_biz or is_error:
             typ = "business_class"
 
-    # 2) Blad cenowy / mega-tani dalekodystansowy.
-    if typ is None:
-        mega = ((pln is not None and pln <= cfg["max_mega_pln"]) or
-                (eur is not None and eur <= cfg["max_mega_eur"]) or
-                (usd is not None and usd <= cfg["max_mega_usd"]))
-        if is_error or (is_longhaul and mega):
-            typ = "error_fare"
+    # 2) BLAD CENOWY - tylko gdy tekst JAWNIE mowi o bledzie/mistake fare.
+    if typ is None and is_error:
+        typ = "error_fare"
+
+    # 3) TANI LOT / mega okazja - bardzo tani lot dalekodystansowy albo oferta z hype.
+    #    To NIE jest blad cenowy, wiec dostanie tag [TANI LOT], nie [BLAD CENOWY].
+    if typ is None and ((is_longhaul and mega) or (is_hype and has_price)):
+        typ = "great_deal"
 
     if typ is None:
         return None
@@ -162,14 +175,16 @@ def detect_deal(raw_item: dict, cfg: dict | None = None) -> Promotion | None:
     if is_longhaul:
         regiony.append("Dalekie loty")
 
-    label = "Blad cenowy / mega okazja" if typ == "error_fare" else "Tania klasa biznes"
-    parts = [label]
+    labels = {
+        "error_fare": "Blad cenowy (mistake fare)",
+        "business_class": "Tania klasa biznes",
+        "great_deal": "Tani lot / mega okazja",
+    }
+    parts = [labels.get(typ, "Okazja lotnicza")]
     if cena_txt:
         parts.append(f"od {cena_txt}")
     if partner:
         parts.append(f"({partner})")
-    if is_error:
-        parts.append("- oznaczone jako blad cenowy")
     streszczenie = " ".join(parts) + "."
 
     return Promotion(

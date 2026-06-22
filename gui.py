@@ -30,12 +30,13 @@ TYPE_LABELS = {
     "mileage_bargain": "okazja milowa",
     "card": "karta",
     "other": "inne",
-    "error_fare": "BLAD CENOWY / mega",
+    "error_fare": "BLAD CENOWY",
+    "great_deal": "tani lot / mega",
     "business_class": "tania biznes",
 }
 
 # Kategorie "perelek" - wyrozniane kolorem i sortowane na gore listy.
-PERLY = {"error_fare", "business_class"}
+PERLY = {"error_fare", "great_deal", "business_class"}
 
 
 class MileWatchApp:
@@ -113,7 +114,8 @@ class MileWatchApp:
             self.tree.heading(c, text=headings[c])
             self.tree.column(c, width=widths[c], anchor="w", stretch=(c == "tytul"))
         self.tree.tag_configure("profil", background="#e8f5e8")
-        self.tree.tag_configure("error", background="#ffd9d9")   # blad cenowy / mega - czerwone
+        self.tree.tag_configure("error", background="#ffd9d9")   # blad cenowy - czerwone
+        self.tree.tag_configure("tani", background="#ffe6cc")    # tani lot / mega - pomaranczowe
         self.tree.tag_configure("biznes", background="#fff0c2")  # tania biznes - zlote
 
         vsb = ttk.Scrollbar(wrap, orient="vertical", command=self.tree.yview)
@@ -189,6 +191,8 @@ class MileWatchApp:
             bonus = f"+{p.bonus_pct}%" if p.bonus_pct else ""
             if p.typ == "error_fare":
                 tag = ("error",)
+            elif p.typ == "great_deal":
+                tag = ("tani",)
             elif p.typ == "business_class":
                 tag = ("biznes",)
             elif is_relevant(p, self.profile):

@@ -13,6 +13,7 @@ API_URL = "https://api.telegram.org/bot{token}/sendMessage"
 # Tag kategorii doklejany na POCZATKU tytulu kazdej wiadomosci.
 CATEGORY_TAGS = {
     "error_fare": "[‼️ BŁĄD CENOWY]",
+    "great_deal": "[🔥 TANI LOT]",
     "business_class": "[💺 BIZNES KLASA]",
     "buy_miles": "[🛒 KUP MILE]",
     "partner_bonus": "[🤝 BONUS PARTNERA]",

@@ -1,7 +1,7 @@
 from models import Promotion
 
 # Kategorie "perelek" - zawsze warte alertu, niezaleznie od profilu (region/partner).
-ALWAYS_ALERT = {"error_fare", "business_class"}
+ALWAYS_ALERT = {"error_fare", "great_deal", "business_class"}
 
 
 def is_relevant(promo: Promotion, profile: dict) -> bool:
