@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 
 from digest import is_relevant
 from models import Promotion
+from scoring import score_promo
 
 
 def promotions_to_dicts(promotions: list[Promotion], profile: dict) -> list[dict]:
@@ -30,6 +31,7 @@ def promotions_to_dicts(promotions: list[Promotion], profile: dict) -> list[dict
             "streszczenie": p.streszczenie,
             "widziane": (p.pierwszy_raz_widziane or "")[:10],
             "profil": is_relevant(p, profile),
+            "score": score_promo(p),
         })
     return out
 
@@ -94,6 +96,8 @@ TEMPLATE = r"""<!DOCTYPE html>
   .badge { background: #eee; border-radius: 5px; padding: .15rem .5rem; font-size: .72rem;
            text-transform: uppercase; letter-spacing: .03em; }
   .bonus { color: #c47a00; font-weight: 700; }
+  .score { background: #2a7a2a; color: #fff; border-radius: 5px; padding: .1rem .4rem;
+           font-size: .72rem; font-weight: 700; }
   .tytul { font-weight: 600; }
   .tag-profil { color: #2a7a2a; font-size: .78rem; margin-left: auto; }
   .stresz { margin: .5rem 0; }
@@ -141,7 +145,7 @@ function _rank(p){
   const zagr = (p.regiony||[]).includes("Wylot zagraniczny");
   return perla ? (zagr ? 1 : 0) : 2;
 }
-DATA.sort((a,b)=>_rank(a)-_rank(b));
+DATA.sort((a,b)=> (_rank(a)-_rank(b)) || ((b.score||0)-(a.score||0)));
 
 fill(document.getElementById("fTyp"), uniq(DATA.map(p=>p.typ)));
 fill(document.getElementById("fPartner"), uniq(DATA.map(p=>p.partner)));
@@ -176,8 +180,9 @@ function render(){
     if((p.regiony||[]).length) meta.push("Region: "+esc(p.regiony.join(", ")));
     if(p.wazne_do) meta.push("Wazne do: "+esc(p.wazne_do));
     if(p.widziane) meta.push("Widziane: "+esc(p.widziane));
+    const score = (p.score!=null) ? `<span class="score">★ ${p.score}</span>` : "";
     li.innerHTML = `<div class="promo-head">
-        <span class="badge">${esc(TYPE_LABELS[p.typ]||p.typ)}</span>${bonus}
+        <span class="badge">${esc(TYPE_LABELS[p.typ]||p.typ)}</span>${score}${bonus}
         <span class="tytul">${esc(p.tytul)}</span>${tag}</div>
       <p class="stresz">${esc(p.streszczenie)}</p>
       <div class="meta">${meta.map(m=>`<span>${m}</span>`).join("")}</div>

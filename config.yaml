@@ -147,3 +147,8 @@ profile:
     - "Polska"
   trasy: []
   min_bonus_pct: 20
+  # Prog jakosci alertu (scoring 0-100, Faza 2). 0 = alarmuj wszystko co istotne.
+  # Podnies (np. 55), aby dostawac tylko najlepsze okazje. Orientacyjnie:
+  # blad cenowy ~80-90, tania biznes ~62-72, tani lot daleki ~60, kup mile +100% ~70,
+  # bonus partnera 50% ~52, wylot zagraniczny: -25 do oceny.
+  min_score: 0

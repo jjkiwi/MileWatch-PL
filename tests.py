@@ -12,6 +12,7 @@ from deals import detect_deal
 from dedup import dedup_promotions, _same_structure
 from digest import is_relevant
 from models import Promotion
+from scoring import score_promo
 
 PASS = 0
 FAIL = 0
@@ -123,12 +124,30 @@ def test_digest():
     check("buy_miles bonus 10% < min 20 -> nierelevant", not is_relevant(weak, prof))
 
 
+def test_scoring():
+    print("\n[scoring] ocena 0-100")
+    ef = Promotion(id="", tytul="x", typ="error_fare", bonus_pct=None, partner=None,
+                   wazne_do=None, regiony=["Dalekie loty"])
+    gd_pl = Promotion(id="", tytul="x", typ="great_deal", bonus_pct=None, partner=None,
+                      wazne_do=None, regiony=["Dalekie loty"])
+    gd_zagr = Promotion(id="", tytul="x", typ="great_deal", bonus_pct=None, partner=None,
+                        wazne_do=None, regiony=["Dalekie loty", "Wylot zagraniczny"])
+    other = Promotion(id="", tytul="x", typ="other", bonus_pct=None, partner=None,
+                      wazne_do=None, regiony=[])
+    check("blad cenowy ma wysoki score (>=80)", score_promo(ef) >= 80)
+    check("zagraniczny tani lot < krajowy tani lot",
+          score_promo(gd_zagr) < score_promo(gd_pl))
+    check("zwykly 'other' ma niski score (<30)", score_promo(other) < 30)
+    check("score zawsze 0-100", 0 <= score_promo(gd_zagr) <= 100)
+
+
 def main():
     test_extract_miles()
     test_extract_rejects_news()
     test_deals()
     test_dedup()
     test_digest()
+    test_scoring()
     print(f"\n=== WYNIK: {PASS} OK, {FAIL} FAIL ===")
     return 1 if FAIL else 0
 

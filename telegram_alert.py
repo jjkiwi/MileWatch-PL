@@ -28,12 +28,16 @@ def category_tag(typ: str) -> str:
 
 
 def format_message(promo: Promotion) -> str:
+    import scoring
     tag = category_tag(promo.typ)
+    sc = scoring.score_promo(promo)
+    ocena = f"{scoring.stars(sc)} {sc}/100"
     bonus = f"\nBonus: +{promo.bonus_pct}%" if promo.bonus_pct else ""
     partner = f"\nPartner: {promo.partner}" if promo.partner else ""
     wazne_do = f"\nWazne do: {promo.wazne_do}" if promo.wazne_do else ""
     return (
-        f"{tag} {promo.tytul}\n\n"
+        f"{tag} {ocena}\n"
+        f"{promo.tytul}\n\n"
         f"{promo.streszczenie}"
         f"{bonus}{partner}{wazne_do}\n\n"
         f"Zrodlo ({promo.zrodlo_nazwa}): {promo.zrodlo_url}"

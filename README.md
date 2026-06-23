@@ -119,7 +119,9 @@ Puste listy = brak filtra na danym polu.
    regex, PL/DE/EN): typ, bonus %, partner, data waznosci, regiony. Odsiewa newsy.
 3. **Deals** (`deals.py`) - perelki: bledy cenowe / mega-tanie loty dalekodystansowe oraz
    tania klasa biznes (z parsowaniem ceny w PLN/EUR i progami).
-4. **Dedup** (`dedup.py`) - rapidfuzz + dopasowanie strukturalne wykrywaja te sama promocje.
+4. **Scoring** (`scoring.py`) - ocena okazji 0-100 (kategoria, bonus %, dalekodystansowosc,
+   kara za wylot spoza regionu). Steruje gwiazdka w alercie, sortowaniem i progiem `min_score`.
+5. **Dedup** (`dedup.py`) - rapidfuzz + dopasowanie strukturalne wykrywaja te sama promocje.
 5. **Storage** (`storage.py`) - SQLite, unikalny `hash_dedup`.
 6. **Front** (`gui.py`) - aplikacja desktop Tkinter z filtrami, perelkami i eksportem.
 7. **Export** (`export_html.py`, `publish.py`) - samodzielny HTML / GitHub Pages.

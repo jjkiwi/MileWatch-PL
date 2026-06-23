@@ -21,6 +21,7 @@ from tkinter import Tk, ttk, StringVar, BooleanVar, messagebox, filedialog
 import storage
 import export_html
 from digest import is_relevant
+from scoring import score_promo
 from sources import load_profile
 from run import run_pipeline
 
@@ -104,11 +105,11 @@ class MileWatchApp:
         wrap = ttk.Frame(self.root, padding=(10, 8))
         wrap.pack(fill="both", expand=True)
 
-        cols = ("typ", "bonus", "tytul", "partner", "wazne_do", "zrodlo")
+        cols = ("score", "typ", "bonus", "tytul", "partner", "wazne_do", "zrodlo")
         self.tree = ttk.Treeview(wrap, columns=cols, show="headings", selectmode="browse")
-        headings = {"typ": "Typ", "bonus": "Bonus", "tytul": "Tytul / opis",
+        headings = {"score": "★", "typ": "Typ", "bonus": "Bonus", "tytul": "Tytul / opis",
                     "partner": "Partner", "wazne_do": "Wazne do", "zrodlo": "Zrodlo"}
-        widths = {"typ": 110, "bonus": 60, "tytul": 380, "partner": 110,
+        widths = {"score": 44, "typ": 110, "bonus": 60, "tytul": 360, "partner": 110,
                   "wazne_do": 95, "zrodlo": 120}
         for c in cols:
             self.tree.heading(c, text=headings[c])
@@ -189,7 +190,8 @@ class MileWatchApp:
             if perla and zagr:
                 return 1
             return 2
-        out.sort(key=_rank)
+        # Najpierw wg rangi, w obrebie rangi wg score malejaco.
+        out.sort(key=lambda p: (_rank(p), -score_promo(p)))
         return out
 
     def apply_filters(self):
@@ -211,7 +213,7 @@ class MileWatchApp:
                 tag = ()
             iid = self.tree.insert(
                 "", "end",
-                values=(TYPE_LABELS.get(p.typ, p.typ), bonus, p.tytul,
+                values=(score_promo(p), TYPE_LABELS.get(p.typ, p.typ), bonus, p.tytul,
                         p.partner or "", p.wazne_do or "", p.zrodlo_nazwa or ""),
                 tags=tag,
             )

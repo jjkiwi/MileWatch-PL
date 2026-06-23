@@ -112,14 +112,18 @@ def _send_alerts(conn, profile, say) -> None:
         say("Alerty wylaczone (brak konfiguracji Telegram/Signal) - pomijam")
         return
 
+    import scoring
+    min_score = int(profile.get("min_score", 0) or 0)
     pending = digest.filter_for_profile(storage.get_unnotified_promotions(conn), profile)
+    # Prog jakosci: alarmujemy tylko okazje z ocena >= min_score (0 = wszystko).
+    pending = [p for p in pending if scoring.score_promo(p) >= min_score]
     sent = 0
     for promo in pending:
         results = [fn(promo) for _, fn in channels]
         if any(results):
             storage.mark_notified(conn, promo.id)
             sent += 1
-    say(f"Alerty ({', '.join(n for n, _ in channels)}): wyslano {sent}/{len(pending)}")
+    say(f"Alerty ({', '.join(n for n, _ in channels)}): wyslano {sent}/{len(pending)} (prog {min_score})")
 
 
 def main() -> int:
