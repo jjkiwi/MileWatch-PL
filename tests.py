@@ -81,11 +81,12 @@ def test_deals():
     check("droga biznes (9000 zl) odrzucona",
           detect_deal(_item("Business class do Tokio za 9000 zl - standard")) is None)
 
-    # Faza 1: priorytet lotnisk wylotu (zagraniczne zostaja, ale bez alertu)
-    d_us = detect_deal(_item("Asiana: Los Angeles - Dalian, China. $735 roundtrip"))
-    check("wylot z USA zostaje, oznaczony zagraniczny",
+    # Faza 1: priorytet lotnisk wylotu (zagraniczne perelki zostaja, ale bez alertu).
+    # Uwaga: wpis musi byc realna okazja (cena ponizej progu), inaczej w ogole nie jest perelka.
+    d_us = detect_deal(_item("Mega okazja: Los Angeles - Tokio za 1200 zl roundtrip"))
+    check("zagraniczna perelka zostaje, oznaczona 'Wylot zagraniczny'",
           d_us is not None and "Wylot zagraniczny" in d_us.regiony)
-    check("wylot z USA NIE jest alarmowany",
+    check("zagraniczna perelka NIE jest alarmowana",
           d_us is not None and not is_relevant(d_us, {}))
     d_pl = detect_deal(_item("Mega okazja: Warszawa - Bangkok za 1400 zl"))
     check("wylot z PL zostaje i jest alarmowany",
