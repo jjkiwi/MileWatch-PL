@@ -120,8 +120,11 @@ Puste listy = brak filtra na danym polu.
 3. **Deals** (`deals.py`) - perelki: bledy cenowe / mega-tanie loty dalekodystansowe oraz
    tania klasa biznes (z parsowaniem ceny w PLN/EUR i progami).
 4. **Scoring** (`scoring.py`) - ocena okazji 0-100 (kategoria, bonus %, dalekodystansowosc,
-   kara za wylot spoza regionu). Steruje gwiazdka w alercie, sortowaniem i progiem `min_score`.
-5. **Dedup** (`dedup.py`) - rapidfuzz + dopasowanie strukturalne wykrywaja te sama promocje.
+   rekord cenowy, kara za wylot spoza regionu). Steruje gwiazdka w alercie, sortowaniem i `min_score`.
+5. **Baseline cen** (`baseline.py`) - uczy sie typowych cen tras (tabela `price_history`) i
+   oznacza "Rekord cenowy", gdy cena jest naprawde wyjatkowa. Opcjonalnie pelna tresc artykulu
+   (`fetch_article.py`, flaga `pelna_tresc`) dla dokladniejszej ceny/kierunku.
+6. **Dedup** (`dedup.py`) - rapidfuzz + dopasowanie strukturalne wykrywaja te sama promocje.
 5. **Storage** (`storage.py`) - SQLite, unikalny `hash_dedup`.
 6. **Front** (`gui.py`) - aplikacja desktop Tkinter z filtrami, perelkami i eksportem.
 7. **Export** (`export_html.py`, `publish.py`) - samodzielny HTML / GitHub Pages.

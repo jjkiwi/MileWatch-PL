@@ -30,9 +30,14 @@ def score_promo(promo: Promotion) -> int:
     regiony = promo.regiony or []
     foreign = "Wylot zagraniczny" in regiony
     longhaul = "Dalekie loty" in regiony
+    rekord = "Rekord cenowy" in regiony
     bonus = promo.bonus_pct or 0
 
     s = float(BASE.get(promo.typ, 18))
+
+    # Cena rekordowo niska dla kierunku (baseline, Faza 3) - mocny sygnal.
+    if rekord:
+        s += 15
 
     # Bonus % (promocje Miles & More): +35 pkt przy 100% bonusu.
     if bonus:

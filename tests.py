@@ -141,6 +141,32 @@ def test_scoring():
     check("score zawsze 0-100", 0 <= score_promo(gd_zagr) <= 100)
 
 
+def test_baseline():
+    print("\n[baseline] historia cen i wykrywanie rekordu")
+    import sqlite3
+    import baseline
+
+    conn = sqlite3.connect(":memory:")
+    conn.execute("CREATE TABLE price_history (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                 "route TEXT, currency TEXT, amount INTEGER, ts TEXT)")
+
+    def mk(t):
+        return Promotion(id="", tytul=t, typ="great_deal", bonus_pct=None, partner=None,
+                         wazne_do=None, regiony=["Dalekie loty"], streszczenie="")
+
+    for t in ["Szwecja za 150 zl", "Szwecja za 160 zl", "Szwecja za 140 zl", "Szwecja za 155 zl"]:
+        baseline.record(conn, baseline.assess(conn, mk(t)))
+
+    p_norm = mk("Szwecja za 150 zl")
+    baseline.assess(conn, p_norm)
+    check("typowa cena (150) NIE jest rekordem", "Rekord cenowy" not in p_norm.regiony)
+
+    p_rec = mk("Szwecja za 90 zl")
+    baseline.assess(conn, p_rec)
+    check("rekordowo niska cena (90) = Rekord cenowy", "Rekord cenowy" in p_rec.regiony)
+    check("rekord podbija scoring", score_promo(p_rec) > score_promo(p_norm))
+
+
 def main():
     test_extract_miles()
     test_extract_rejects_news()
@@ -148,6 +174,7 @@ def main():
     test_dedup()
     test_digest()
     test_scoring()
+    test_baseline()
     print(f"\n=== WYNIK: {PASS} OK, {FAIL} FAIL ===")
     return 1 if FAIL else 0
 

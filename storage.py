@@ -25,6 +25,16 @@ CREATE TABLE IF NOT EXISTS notified (
     promo_id TEXT PRIMARY KEY,
     notified_at TEXT NOT NULL
 );
+
+-- Historia cen tras (Faza 3) - sluzy do oceny "czy ta cena jest naprawde wyjatkowa".
+CREATE TABLE IF NOT EXISTS price_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    route TEXT NOT NULL,
+    currency TEXT NOT NULL,
+    amount INTEGER NOT NULL,
+    ts TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_price_route ON price_history (route, currency, ts);
 """
 
 

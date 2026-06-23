@@ -152,3 +152,6 @@ profile:
   # blad cenowy ~80-90, tania biznes ~62-72, tani lot daleki ~60, kup mile +100% ~70,
   # bonus partnera 50% ~52, wylot zagraniczny: -25 do oceny.
   min_score: 0
+  # Faza 3: pobieranie pelnej tresci artykulu dla itemow z cena (dokladniejsza cena/kierunek).
+  # Domyslnie false (lekko/szybko). true = wiecej zapytan HTTP, ale dokladniejszy baseline cen.
+  pelna_tresc: false

@@ -65,10 +65,21 @@ def run_pipeline(progress=None) -> list:
     raw_items = fetch_all(sources)
     _say(f"Zebrano {len(raw_items)} surowych itemow")
 
+    use_fulltext = bool(load_profile().get("pelna_tresc"))
+    if use_fulltext:
+        import fetch_article
+
     candidates = []
     for raw_item in raw_items:
+        # Faza 3 (opcjonalnie): dla itemow z sygnalem ceny dociagnij pelna tresc artykulu,
+        # zeby dokladniej wyciagnac cene/kierunek/date niz z krotkiej zajawki RSS.
+        if use_fulltext and fetch_article.looks_dealish(raw_item.get("tekst", "")):
+            full = fetch_article.fetch_text(raw_item.get("zrodlo_url", ""))
+            if full:
+                raw_item = {**raw_item, "tekst": raw_item.get("tekst", "") + "\n" + full}
+
         candidates.extend(extract_from_item(raw_item))   # promocje Miles & More
-        deal = detect_deal(raw_item)                     # bledy cenowe / tania biznes klasa
+        deal = detect_deal(raw_item)                     # bledy cenowe / tani lot / biznes
         if deal:
             candidates.append(deal)
     _say(f"Wykryto {len(candidates)} kandydatow na promocje")
@@ -80,10 +91,15 @@ def run_pipeline(progress=None) -> list:
     existing = storage.get_recent_promotions(conn)
     unique = dedup.dedup_promotions(candidates, existing)
 
+    import baseline
     new_promotions = []
     for promo in unique:
+        # Baseline cen (Faza 3): ocena PRZED zapisem (moze oznaczyc "Rekord cenowy"),
+        # a zapis obserwacji do historii dopiero po udanym zapisie nowej promocji.
+        obs = baseline.assess(conn, promo)
         if storage.save_promotion(conn, promo):
             new_promotions.append(promo)
+            baseline.record(conn, obs)
     _say(f"Zapisano {len(new_promotions)} nowych promocji")
 
     # Opcjonalne alerty - Telegram i/lub Signal (oba w pelni darmowe). Kazdy kanal wlacza
