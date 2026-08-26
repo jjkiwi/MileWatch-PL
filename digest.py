@@ -5,6 +5,15 @@ ALWAYS_ALERT = {"error_fare", "great_deal", "business_class"}
 
 
 def is_relevant(promo: Promotion, profile: dict) -> bool:
+    regiony = promo.regiony or []
+
+    # Zloty termin = najwyzszy priorytet uzytkownika (okno urlopowe). Lot, ktorego termin
+    # podrozy wpada w to okno, alertujemy ZAWSZE - niezaleznie od typu i profilu. Wyjatek:
+    # wylot zagraniczny (spoza PL + krajow oscienncych) pokazujemy, ale nie alarmujemy,
+    # spojnie z polityka perelek (i tak nie poleciec z tamtad).
+    if "Zloty termin" in regiony:
+        return "Wylot zagraniczny" not in regiony
+
     if promo.typ in ALWAYS_ALERT:
         # Perelka z wylotem spoza regionu (Polska + kraje oscienne) - zostaje w bazie i na
         # stronie, ale jej NIE alarmujemy (mniej ja promujemy). Reszta perelek = alert.
@@ -46,7 +55,8 @@ def format_digest(promotions: list[Promotion]) -> str:
         bonus = f" +{p.bonus_pct}%" if p.bonus_pct else ""
         partner = f" | partner: {p.partner}" if p.partner else ""
         wazne_do = f" | wazne do: {p.wazne_do}" if p.wazne_do else ""
-        lines.append(f"* [{p.typ}]{bonus} {p.tytul}{partner}{wazne_do}")
+        zloty = "[ZLOTY TERMIN] " if "Zloty termin" in (p.regiony or []) else ""
+        lines.append(f"* {zloty}[{p.typ}]{bonus} {p.tytul}{partner}{wazne_do}")
         lines.append(f"  {p.streszczenie}")
         lines.append(f"  Zrodlo: {p.zrodlo_nazwa} - {p.zrodlo_url}")
         lines.append("")

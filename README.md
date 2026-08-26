@@ -112,6 +112,42 @@ profile:
 Promocje zgodne z profilem sa wyrozniane (zielony wiersz/pasek + znaczek "profil").
 Puste listy = brak filtra na danym polu.
 
+## Zlote terminy (okna urlopowe)
+
+Najwazniejsza funkcja pod planowanie urlopu: podajesz **okresy**, w ktorych masz wolne i mozesz
+gdzies poleciec (nie sztywna date wylotu, tylko przedzial od-do). Jesli w tresci oferty pojawi
+sie **termin podrozy** wpadajacy w takie okno, oferta jest **zawsze alertowana**, **mocno
+podbita w scoringu** i **wyrozniona na gorze** listy w aplikacji, na stronie i w eksporcie
+(zloty pasek + znaczek, w Telegramie baner "ZLOTY TERMIN").
+
+Ustaw w `config.yaml` -> `profile.zlote_terminy` (kolejnosc = priorytet):
+
+```yaml
+profile:
+  zlote_terminy:
+    - nazwa: "Wakacje letnie"
+      od: "2026-07-15"
+      do: "2026-08-31"
+    - nazwa: "Swieta"
+      od: "2026-12-20"
+      do: "2027-01-03"
+```
+
+**Jak wykrywany jest termin podrozy** (`golden.py`, PL/DE/EN, bez API):
+- zakresy dat: `01.09.2026 - 15.12.2026`, `2026-09-01 do 2026-12-15`,
+- zakresy/pojedyncze miesiace: `wrzesien-grudzien 2026`, `we wrzesniu 2026`, `September bis Dezember`,
+- zakresy dni w miesiacu: `od 10 do 20 sierpnia 2026`,
+- pojedyncze daty licza sie tylko przy slowie o podrozy (`termin`, `wylot`, `travel`, `Reisezeitraum`...),
+  zeby nie mylic **daty waznosci promocji** z terminem lotu.
+
+Trafienie = przeciecie wykrytego terminu z ktoregokolwiek okna. Wylot spoza Polski i krajow
+oscienncych jest pokazywany, ale nie alarmowany (i tak nie polecisz z tamtad) - spojnie z
+polityka perelek.
+
+**Wazne (ograniczenie):** dziala tylko gdy termin podrozy jest w tresci. Krotkie zajawki RSS
+czesto go nie zawieraja - wtedy ustaw `profile.pelna_tresc: true`, zeby dociagac pelny artykul
+(wiecej trafien kosztem kilku dodatkowych zapytan HTTP).
+
 ## Architektura
 
 1. **Fetch** (`fetch_rss.py`, `fetch_scrape.py`) - surowe dane ze zrodel (cache + rate-limit).
@@ -119,16 +155,19 @@ Puste listy = brak filtra na danym polu.
    regex, PL/DE/EN): typ, bonus %, partner, data waznosci, regiony. Odsiewa newsy.
 3. **Deals** (`deals.py`) - perelki: bledy cenowe / mega-tanie loty dalekodystansowe oraz
    tania klasa biznes (z parsowaniem ceny w PLN/EUR i progami).
-4. **Scoring** (`scoring.py`) - ocena okazji 0-100 (kategoria, bonus %, dalekodystansowosc,
-   rekord cenowy, kara za wylot spoza regionu). Steruje gwiazdka w alercie, sortowaniem i `min_score`.
-5. **Baseline cen** (`baseline.py`) - uczy sie typowych cen tras (tabela `price_history`) i
+4. **Zlote terminy** (`golden.py`) - wykrywa termin podrozy w tresci i oznacza tagiem
+   "Zloty termin" oferty wpadajace w Twoje okna urlopowe (zawsze alert + podbicie scoringu).
+5. **Scoring** (`scoring.py`) - ocena okazji 0-100 (zloty termin, kategoria, bonus %,
+   dalekodystansowosc, rekord cenowy, kara za wylot spoza regionu). Steruje gwiazdka w alercie,
+   sortowaniem i `min_score`.
+6. **Baseline cen** (`baseline.py`) - uczy sie typowych cen tras (tabela `price_history`) i
    oznacza "Rekord cenowy", gdy cena jest naprawde wyjatkowa. Opcjonalnie pelna tresc artykulu
    (`fetch_article.py`, flaga `pelna_tresc`) dla dokladniejszej ceny/kierunku.
-6. **Dedup** (`dedup.py`) - rapidfuzz + dopasowanie strukturalne wykrywaja te sama promocje.
-7. **Storage** (`storage.py`) - SQLite, unikalny `hash_dedup`.
-8. **Front** (`gui.py`) - aplikacja desktop Tkinter z filtrami, perelkami i eksportem.
-9. **Export** (`export_html.py`, `publish.py`) - samodzielny HTML / GitHub Pages.
-10. **Alerty** (`telegram_alert.py`, `signal_alert.py`, opcjonalnie, darmowe) - powiadomienia
+7. **Dedup** (`dedup.py`) - rapidfuzz + dopasowanie strukturalne wykrywaja te sama promocje.
+8. **Storage** (`storage.py`) - SQLite, unikalny `hash_dedup`.
+9. **Front** (`gui.py`) - aplikacja desktop Tkinter z filtrami, perelkami i eksportem.
+10. **Export** (`export_html.py`, `publish.py`) - samodzielny HTML / GitHub Pages.
+11. **Alerty** (`telegram_alert.py`, `signal_alert.py`, opcjonalnie, darmowe) - powiadomienia
    o nowych promocjach i perelkach na Telegram i/lub Signal.
 
 Testy regresyjne: `python tests.py` (bez sieci/kluczy). Diagnostyka zrodel: `python diag.py`.

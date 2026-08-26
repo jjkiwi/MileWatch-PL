@@ -31,6 +31,7 @@ def promotions_to_dicts(promotions: list[Promotion], profile: dict) -> list[dict
             "streszczenie": p.streszczenie,
             "widziane": (p.pierwszy_raz_widziane or "")[:10],
             "profil": is_relevant(p, profile),
+            "zloty": "Zloty termin" in (p.regiony or []),
             "score": score_promo(p),
         })
     return out
@@ -87,11 +88,14 @@ TEMPLATE = r"""<!DOCTYPE html>
   .promo.error { border-left: 4px solid #c0392b; background: #fff5f5; }
   .promo.tani { border-left: 4px solid #d35400; background: #fff8f2; }
   .promo.biznes { border-left: 4px solid #c79100; background: #fffdf3; }
+  .promo.zloty { border-left: 5px solid #e0a800; background: #fff6da; }
   @media (prefers-color-scheme: dark) {
     .promo.error { background: #2c2020 !important; }
     .promo.tani { background: #2b2420 !important; }
     .promo.biznes { background: #2b2820 !important; }
+    .promo.zloty { background: #33301c !important; }
   }
+  .tag-zloty { color: #b8860b; font-weight: 700; font-size: .78rem; margin-left: auto; }
   .promo-head { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
   .badge { background: #eee; border-radius: 5px; padding: .15rem .5rem; font-size: .72rem;
            text-transform: uppercase; letter-spacing: .03em; }
@@ -120,6 +124,9 @@ TEMPLATE = r"""<!DOCTYPE html>
     <label style="font-size:.85rem;display:flex;align-items:center;gap:.3rem;">
       <input type="checkbox" id="fProfil"> tylko z profilu
     </label>
+    <label style="font-size:.85rem;display:flex;align-items:center;gap:.3rem;">
+      <input type="checkbox" id="fZloty"> tylko zlote terminy
+    </label>
   </div>
 
   <ul class="promos" id="list"></ul>
@@ -139,11 +146,13 @@ function fill(sel, vals){ for(const v of vals){ const o=document.createElement("
   o.value=v; o.textContent=v; sel.appendChild(o);} }
 
 const PERLY = {error_fare:1, great_deal:1, business_class:1};
-// Sortowanie: perelki z preferowanym wylotem na gorze, perelki zagraniczne nizej, reszta na koncu.
+// Sortowanie: zlote terminy na samej gorze, potem perelki krajowe, perelki zagraniczne, reszta.
 function _rank(p){
+  const reg = p.regiony||[];
+  if(p.zloty && !reg.includes("Wylot zagraniczny")) return 0;
   const perla = !!PERLY[p.typ];
-  const zagr = (p.regiony||[]).includes("Wylot zagraniczny");
-  return perla ? (zagr ? 1 : 0) : 2;
+  const zagr = reg.includes("Wylot zagraniczny");
+  return perla ? (zagr ? 2 : 1) : 3;
 }
 DATA.sort((a,b)=> (_rank(a)-_rank(b)) || ((b.score||0)-(a.score||0)));
 
@@ -159,6 +168,7 @@ function render(){
   const fp=document.getElementById("fPartner").value;
   const fr=document.getElementById("fRegion").value;
   const fpr=document.getElementById("fProfil").checked;
+  const fz=document.getElementById("fZloty").checked;
   const list=document.getElementById("list"); list.innerHTML="";
   let shown=0;
   for(const p of DATA){
@@ -166,14 +176,17 @@ function render(){
     if(fp && p.partner!==fp) continue;
     if(fr && !(p.regiony||[]).includes(fr)) continue;
     if(fpr && !p.profil) continue;
+    if(fz && !p.zloty) continue;
     if(q && !((p.tytul||"").toLowerCase().includes(q) || (p.streszczenie||"").toLowerCase().includes(q))) continue;
     shown++;
     const li=document.createElement("li");
-    const cls = p.typ==="error_fare" ? " error" : p.typ==="great_deal" ? " tani"
+    const cls = p.zloty ? " zloty"
+              : p.typ==="error_fare" ? " error" : p.typ==="great_deal" ? " tani"
               : p.typ==="business_class" ? " biznes" : (p.profil?" profil":"");
     li.className="promo"+cls;
     const bonus = p.bonus_pct ? `<span class="bonus">+${p.bonus_pct}%</span>` : "";
-    const tag = PERLY[p.typ] ? `<span class="tag-profil">&#9733; perelka</span>`
+    const tag = p.zloty ? `<span class="tag-zloty">&#128993; zloty termin</span>`
+              : PERLY[p.typ] ? `<span class="tag-profil">&#9733; perelka</span>`
               : p.profil ? `<span class="tag-profil">&#10003; profil</span>` : "";
     const meta=[];
     if(p.partner) meta.push("Partner: "+esc(p.partner));
@@ -192,7 +205,7 @@ function render(){
   document.getElementById("count").textContent=shown;
   document.getElementById("empty").style.display = shown? "none":"block";
 }
-for(const id of ["q","fTyp","fPartner","fRegion","fProfil"])
+for(const id of ["q","fTyp","fPartner","fRegion","fProfil","fZloty"])
   document.getElementById(id).addEventListener("input", render);
 render();
 </script>

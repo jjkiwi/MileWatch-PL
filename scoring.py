@@ -31,9 +31,15 @@ def score_promo(promo: Promotion) -> int:
     foreign = "Wylot zagraniczny" in regiony
     longhaul = "Dalekie loty" in regiony
     rekord = "Rekord cenowy" in regiony
+    zloty = "Zloty termin" in regiony
     bonus = promo.bonus_pct or 0
 
     s = float(BASE.get(promo.typ, 18))
+
+    # Zloty termin (okno urlopowe uzytkownika) - najwyzszy priorytet: mocno podbijamy,
+    # zeby taka oferta wskoczyla na gore listy i przebila prog alertu (min_score).
+    if zloty:
+        s += 30
 
     # Cena rekordowo niska dla kierunku (baseline, Faza 3) - mocny sygnal.
     if rekord:

@@ -32,10 +32,13 @@ def format_message(promo: Promotion) -> str:
     tag = category_tag(promo.typ)
     sc = scoring.score_promo(promo)
     ocena = f"{scoring.stars(sc)} {sc}/100"
+    # Zloty termin (okno urlopowe) - najwazniejszy sygnal, na samej gorze wiadomosci.
+    zloty = "🟡 ZLOTY TERMIN — pasuje do Twojego urlopu!\n" if "Zloty termin" in (promo.regiony or []) else ""
     bonus = f"\nBonus: +{promo.bonus_pct}%" if promo.bonus_pct else ""
     partner = f"\nPartner: {promo.partner}" if promo.partner else ""
     wazne_do = f"\nWazne do: {promo.wazne_do}" if promo.wazne_do else ""
     return (
+        f"{zloty}"
         f"{tag} {ocena}\n"
         f"{promo.tytul}\n\n"
         f"{promo.streszczenie}"

@@ -81,6 +81,7 @@ class MileWatchApp:
         self.region_var = StringVar()
         self.profil_var = BooleanVar(value=False)
         self.perly_var = BooleanVar(value=False)
+        self.zlote_var = BooleanVar(value=False)
 
         ttk.Label(f, text="Szukaj:").pack(side="left")
         q = ttk.Entry(f, textvariable=self.q_var, width=22)
@@ -98,6 +99,8 @@ class MileWatchApp:
         ttk.Checkbutton(f, text="tylko z profilu", variable=self.profil_var,
                         command=self.apply_filters).pack(side="left", padx=(0, 8))
         ttk.Checkbutton(f, text="tylko perelki", variable=self.perly_var,
+                        command=self.apply_filters).pack(side="left", padx=(0, 8))
+        ttk.Checkbutton(f, text="tylko zlote terminy", variable=self.zlote_var,
                         command=self.apply_filters).pack(side="left", padx=(0, 10))
         ttk.Button(f, text="Wyczysc", command=self.clear_filters).pack(side="left")
 
@@ -118,6 +121,7 @@ class MileWatchApp:
         self.tree.tag_configure("error", background="#ffd9d9")   # blad cenowy - czerwone
         self.tree.tag_configure("tani", background="#ffe6cc")    # tani lot / mega - pomaranczowe
         self.tree.tag_configure("biznes", background="#fff0c2")  # tania biznes - zlote
+        self.tree.tag_configure("zloty", background="#ffe08a")   # ZLOTY TERMIN - mocne zloto
 
         vsb = ttk.Scrollbar(wrap, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=vsb.set)
@@ -163,6 +167,7 @@ class MileWatchApp:
             region = ""
         only_profil = self.profil_var.get()
         only_perly = self.perly_var.get()
+        only_zlote = self.zlote_var.get()
 
         out = []
         for p in self.all_promos:
@@ -176,20 +181,25 @@ class MileWatchApp:
                 continue
             if only_perly and p.typ not in PERLY:
                 continue
+            if only_zlote and "Zloty termin" not in (p.regiony or []):
+                continue
             if q and q not in (p.tytul or "").lower() and q not in (p.streszczenie or "").lower():
                 continue
             out.append(p)
 
-        # Sortowanie: perelki z preferowanym wylotem na gorze, perelki zagraniczne nizej,
-        # reszta na koncu.
+        # Sortowanie: zlote terminy na samej gorze, potem perelki krajowe, perelki
+        # zagraniczne nizej, reszta na koncu.
         def _rank(p):
-            perla = p.typ in PERLY
-            zagr = "Wylot zagraniczny" in (p.regiony or [])
-            if perla and not zagr:
+            reg = p.regiony or []
+            if "Zloty termin" in reg and "Wylot zagraniczny" not in reg:
                 return 0
-            if perla and zagr:
+            perla = p.typ in PERLY
+            zagr = "Wylot zagraniczny" in reg
+            if perla and not zagr:
                 return 1
-            return 2
+            if perla and zagr:
+                return 2
+            return 3
         # Najpierw wg rangi, w obrebie rangi wg score malejaco.
         out.sort(key=lambda p: (_rank(p), -score_promo(p)))
         return out
@@ -201,7 +211,9 @@ class MileWatchApp:
         shown = self._filtered()
         for p in shown:
             bonus = f"+{p.bonus_pct}%" if p.bonus_pct else ""
-            if p.typ == "error_fare":
+            if "Zloty termin" in (p.regiony or []):
+                tag = ("zloty",)
+            elif p.typ == "error_fare":
                 tag = ("error",)
             elif p.typ == "great_deal":
                 tag = ("tani",)
@@ -228,6 +240,7 @@ class MileWatchApp:
         self.region_var.set("")
         self.profil_var.set(False)
         self.perly_var.set(False)
+        self.zlote_var.set(False)
         self.apply_filters()
 
     # --- Akcje ---------------------------------------------------------------

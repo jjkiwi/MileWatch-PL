@@ -7,6 +7,9 @@ Nie wymagaja sieci ani kluczy API.
 
 import sys
 
+from datetime import date
+
+import golden
 from extract import extract_from_item
 from deals import detect_deal
 from dedup import dedup_promotions, _same_structure
@@ -168,6 +171,57 @@ def test_baseline():
     check("rekord podbija scoring", score_promo(p_rec) > score_promo(p_norm))
 
 
+def test_golden():
+    print("\n[golden] zlote terminy: okna urlopowe -> alert o lotach w tym okresie")
+    TODAY = date(2026, 8, 26)
+    windows = golden.load_windows({"zlote_terminy": [
+        {"nazwa": "Lato", "od": "2026-07-15", "do": "2026-09-10"},
+        {"nazwa": "Swieta", "od": "2026-12-20", "do": "2027-01-03"},
+    ]})
+    check("wczytano 2 okna", len(windows) == 2)
+
+    # Dopasowanie terminu podrozy do okna (zakres miesiecy, DE, zakres dni, miejscownik PL)
+    m = golden.match("Tanie loty, terminy podrozy: wrzesien-grudzien 2026", windows, TODAY)
+    check("zakres miesiecy trafia w okno Lato", m is not None and m.nazwa == "Lato")
+    m = golden.match("Reisezeitraum: 01.09.2026 - 15.12.2026", windows, TODAY)
+    check("DE Reisezeitraum (zakres dat) trafia", m is not None)
+    m = golden.match("Lec w sierpniu 2026 na urlop", windows, TODAY)
+    check("miejscownik 'w sierpniu' trafia w Lato", m is not None and m.nazwa == "Lato")
+
+    # Brak trafienia: poza oknami / brak terminu / data waznosci (nie termin lotu)
+    check("listopad poza oknami -> brak",
+          golden.match("wyloty listopad 2026", windows, TODAY) is None)
+    check("data waznosci promocji != termin lotu -> brak",
+          golden.match("Promocja wazna do 31.12.2026", windows, TODAY) is None)
+    check("brak jakiejkolwiek daty -> brak",
+          golden.match("Super promocja Miles & More", windows, TODAY) is None)
+
+    # Tagowanie promocji
+    p = Promotion(id="", tytul="Tokio", typ="great_deal", bonus_pct=None, partner=None,
+                  wazne_do=None, regiony=["Dalekie loty"], streszczenie="Tani lot.")
+    gm = golden.match("Tokio, podroz we wrzesniu 2026", windows, TODAY)
+    golden.tag(p, gm)
+    check("tag() dodaje 'Zloty termin' do regiony", "Zloty termin" in p.regiony)
+    check("tag() dopisuje notke do streszczenia", "Zloty termin" in p.streszczenie)
+
+    # Scoring: zloty termin mocno podbija ocene
+    base = Promotion(id="", tytul="x", typ="great_deal", bonus_pct=None, partner=None,
+                     wazne_do=None, regiony=["Dalekie loty"])
+    gold = Promotion(id="", tytul="x", typ="great_deal", bonus_pct=None, partner=None,
+                     wazne_do=None, regiony=["Dalekie loty", "Zloty termin"])
+    check("zloty termin podbija scoring", score_promo(gold) > score_promo(base))
+
+    # is_relevant: zloty termin zawsze alertowany (nawet wbrew profilowi), wyjatek: wylot zagr.
+    restrykcyjny = {"typy_promocji": ["buy_miles"], "partnerzy": ["LOT"],
+                    "regiony": ["Polska"], "min_bonus_pct": 90}
+    zloty_pl = Promotion(id="", tytul="x", typ="great_deal", bonus_pct=None, partner=None,
+                         wazne_do=None, regiony=["Zloty termin"])
+    check("zloty termin alertowany mimo restrykcyjnego profilu", is_relevant(zloty_pl, restrykcyjny))
+    zloty_zagr = Promotion(id="", tytul="x", typ="great_deal", bonus_pct=None, partner=None,
+                           wazne_do=None, regiony=["Zloty termin", "Wylot zagraniczny"])
+    check("zloty termin z wylotem zagranicznym NIE jest alertowany", not is_relevant(zloty_zagr, {}))
+
+
 def main():
     test_extract_miles()
     test_extract_rejects_news()
@@ -176,6 +230,7 @@ def main():
     test_digest()
     test_scoring()
     test_baseline()
+    test_golden()
     print(f"\n=== WYNIK: {PASS} OK, {FAIL} FAIL ===")
     return 1 if FAIL else 0
 

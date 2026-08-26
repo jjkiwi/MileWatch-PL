@@ -15,6 +15,7 @@ import uuid
 
 import dedup
 import digest
+import golden
 import storage
 import telegram_alert
 from deals import detect_deal
@@ -65,11 +66,16 @@ def run_pipeline(progress=None) -> list:
     raw_items = fetch_all(sources)
     _say(f"Zebrano {len(raw_items)} surowych itemow")
 
-    use_fulltext = bool(load_profile().get("pelna_tresc"))
+    profile = load_profile()
+    use_fulltext = bool(profile.get("pelna_tresc"))
     if use_fulltext:
         import fetch_article
+    windows = golden.load_windows(profile)   # zlote terminy (okna urlopowe)
+    if windows:
+        _say(f"Zlote terminy: {len(windows)} okien urlopowych")
 
     candidates = []
+    golden_hits = 0
     for raw_item in raw_items:
         # Faza 3 (opcjonalnie): dla itemow z sygnalem ceny dociagnij pelna tresc artykulu,
         # zeby dokladniej wyciagnac cene/kierunek/date niz z krotkiej zajawki RSS.
@@ -78,11 +84,25 @@ def run_pipeline(progress=None) -> list:
             if full:
                 raw_item = {**raw_item, "tekst": raw_item.get("tekst", "") + "\n" + full}
 
-        candidates.extend(extract_from_item(raw_item))   # promocje Miles & More
+        item_promos = extract_from_item(raw_item)        # promocje Miles & More
         deal = detect_deal(raw_item)                     # bledy cenowe / tani lot / biznes
         if deal:
-            candidates.append(deal)
-    _say(f"Wykryto {len(candidates)} kandydatow na promocje")
+            item_promos.append(deal)
+
+        # Zlote terminy: jesli termin podrozy w tekscie wpada w okno urlopowe, oznacz
+        # wszystkie promocje z tego itemu (zawsze alertowane, podbite w scoringu).
+        if windows:
+            gm = golden.match(raw_item.get("tekst", ""), windows)
+            if gm:
+                for promo in item_promos:
+                    golden.tag(promo, gm)
+                golden_hits += len(item_promos)
+
+        candidates.extend(item_promos)
+    msg = f"Wykryto {len(candidates)} kandydatow na promocje"
+    if windows:
+        msg += f" (w tym {golden_hits} w zlotym terminie)"
+    _say(msg)
 
     for promo in candidates:
         promo.id = str(uuid.uuid4())

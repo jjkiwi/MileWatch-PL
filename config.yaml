@@ -155,3 +155,19 @@ profile:
   # Faza 3: pobieranie pelnej tresci artykulu dla itemow z cena (dokladniejsza cena/kierunek).
   # Domyslnie false (lekko/szybko). true = wiecej zapytan HTTP, ale dokladniejszy baseline cen.
   pelna_tresc: false
+
+  # --- ZLOTE TERMINY: okna, w ktorych masz urlop i chcesz alerty o dobrych lotach ---
+  # Termin to OKRES (od-do), nie sztywna data wylotu. Jesli w tresci oferty wykryjemy termin
+  # podrozy (data, zakres dat albo miesiac/miesiace) zachodzacy na ktorekolwiek okno ponizej,
+  # oferta jest ZAWSZE alertowana, mocno podbita w scoringu i wyrozniona na gorze listy/strony.
+  # Kolejnosc okien = priorytet. Podmien ponizsze PRZYKLADY na swoje realne terminy urlopu.
+  #
+  # Wskazowka: ustaw pelna_tresc: true (wyzej), by czesciej wykrywac termin podrozy w artykule -
+  # krotkie zajawki RSS czesto go nie zawieraja.
+  zlote_terminy:
+    - nazwa: "Przyklad - lato"
+      od: "2026-07-15"
+      do: "2026-08-31"
+    - nazwa: "Przyklad - swieta"
+      od: "2026-12-20"
+      do: "2027-01-03"
