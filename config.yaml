@@ -164,10 +164,34 @@ profile:
   #
   # Wskazowka: ustaw pelna_tresc: true (wyzej), by czesciej wykrywac termin podrozy w artykule -
   # krotkie zajawki RSS czesto go nie zawieraja.
+  # Twoje okna urlopowe. Kazdy termin ma najblizsze wystapienie + kolejny rok, zeby lapac
+  # oferty publikowane z wyprzedzeniem. Raz w roku dopisz kolejny rok (albo usun miniony).
   zlote_terminy:
-    - nazwa: "Przyklad - lato"
-      od: "2026-07-15"
-      do: "2026-08-31"
-    - nazwa: "Przyklad - swieta"
-      od: "2026-12-20"
-      do: "2027-01-03"
+    # Wakacje (1-30 wrzesnia)
+    - nazwa: "Wakacje 2026"
+      od: "2026-09-01"
+      do: "2026-09-30"
+    - nazwa: "Wakacje 2027"
+      od: "2027-09-01"
+      do: "2027-09-30"
+    # Swieta (21 grudnia - 6 stycznia)
+    - nazwa: "Swieta 2026/27"
+      od: "2026-12-21"
+      do: "2027-01-06"
+    - nazwa: "Swieta 2027/28"
+      od: "2027-12-21"
+      do: "2028-01-06"
+    # Swieto 11 listopada (6-15 listopada)
+    - nazwa: "11 listopada 2026"
+      od: "2026-11-06"
+      do: "2026-11-15"
+    - nazwa: "11 listopada 2027"
+      od: "2027-11-06"
+      do: "2027-11-15"
+    # Majowka (30 kwietnia - 3 maja); majowka 2026 juz minela, wiec od 2027
+    - nazwa: "Majowka 2027"
+      od: "2027-04-30"
+      do: "2027-05-03"
+    - nazwa: "Majowka 2028"
+      od: "2028-04-30"
+      do: "2028-05-03"
