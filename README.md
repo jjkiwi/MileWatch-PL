@@ -125,10 +125,10 @@ Puste listy = brak filtra na danym polu.
    oznacza "Rekord cenowy", gdy cena jest naprawde wyjatkowa. Opcjonalnie pelna tresc artykulu
    (`fetch_article.py`, flaga `pelna_tresc`) dla dokladniejszej ceny/kierunku.
 6. **Dedup** (`dedup.py`) - rapidfuzz + dopasowanie strukturalne wykrywaja te sama promocje.
-5. **Storage** (`storage.py`) - SQLite, unikalny `hash_dedup`.
-6. **Front** (`gui.py`) - aplikacja desktop Tkinter z filtrami, perelkami i eksportem.
-7. **Export** (`export_html.py`, `publish.py`) - samodzielny HTML / GitHub Pages.
-8. **Alerty** (`telegram_alert.py`, `signal_alert.py`, opcjonalnie, darmowe) - powiadomienia
+7. **Storage** (`storage.py`) - SQLite, unikalny `hash_dedup`.
+8. **Front** (`gui.py`) - aplikacja desktop Tkinter z filtrami, perelkami i eksportem.
+9. **Export** (`export_html.py`, `publish.py`) - samodzielny HTML / GitHub Pages.
+10. **Alerty** (`telegram_alert.py`, `signal_alert.py`, opcjonalnie, darmowe) - powiadomienia
    o nowych promocjach i perelkach na Telegram i/lub Signal.
 
 Testy regresyjne: `python tests.py` (bez sieci/kluczy). Diagnostyka zrodel: `python diag.py`.

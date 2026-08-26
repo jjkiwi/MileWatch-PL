@@ -15,7 +15,7 @@ Oczekiwane: na końcu `=== WYNIK: N OK, 0 FAIL ===`.
 
 1. W Telegramie napisz do **@BotFather** → `/revoke` → wybierz swojego bota → skopiuj **nowy token**.
 2. Wstaw nowy token do pliku `.env` (podmień linię `TELEGRAM_BOT_TOKEN=...`).
-   `TELEGRAM_CHAT_ID` zostaw na `365772469`.
+   `TELEGRAM_CHAT_ID` zostaw bez zmian (Twoj wlasny chat_id z `getUpdates`).
 3. Szybki test wysyłki:
 
 ```powershell
@@ -65,7 +65,7 @@ Dodaj:
 | Name | Value |
 |------|-------|
 | `TELEGRAM_BOT_TOKEN` | *(nowy token z kroku 1)* |
-| `TELEGRAM_CHAT_ID` | `365772469` |
+| `TELEGRAM_CHAT_ID` | *(Twoj chat_id z `getUpdates`)* |
 | `SIGNAL_PHONE` | *(opcjonalnie, np. +48...)* |
 | `SIGNAL_API_KEY` | *(opcjonalnie, z CallMeBot)* |
 
