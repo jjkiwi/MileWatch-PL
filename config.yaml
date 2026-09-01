@@ -115,6 +115,15 @@ sources:
     url: "https://www.theflightdeal.com/feed/"
     enabled: true
 
+  # Tani Locik - polski serwis z tanimi lotami. To NIE zrodlo Miles & More, wiec filtr M&M
+  # (extract.py) je odrzuci - ale deals.py (perelki: tani lot / biznes / blad cenowy) oraz
+  # golden.py (zlote terminy) beda z niego korzystac. URL feedu = standardowy WordPress /feed/,
+  # DO WERYFIKACJI (uruchom `python diag.py`). Jesli 0 itemow - patrz komentarz nizej.
+  - name: "Tani Locik"
+    type: rss
+    url: "https://tanilocik.pl/feed/"
+    enabled: true
+
   # --- Scraping HTML (robots.txt zrodel na to pozwala) ---
   - name: "InsideFlyer.de - kategoria M&M (scrape)"
     type: scrape
