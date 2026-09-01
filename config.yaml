@@ -124,6 +124,13 @@ sources:
     url: "https://tanilocik.pl/feed/"
     enabled: true
 
+  # Tani Bilet - kolejny polski serwis tanich lotow (nie M&M; wartosc: perelki + zlote terminy).
+  # URL feedu = standardowy WordPress /feed/, DO WERYFIKACJI (uruchom `python diag.py`).
+  - name: "Tani Bilet"
+    type: rss
+    url: "https://tanibilet.eu/feed/"
+    enabled: true
+
   # --- Scraping HTML (robots.txt zrodel na to pozwala) ---
   - name: "InsideFlyer.de - kategoria M&M (scrape)"
     type: scrape
