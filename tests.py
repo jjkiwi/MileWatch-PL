@@ -96,6 +96,16 @@ def test_deals():
           d_pl is not None and "Wylot zagraniczny" not in d_pl.regiony
           and is_relevant(d_pl, {}))
 
+    # Prog longhaul 3000 zl: realna okazja dalekodystansowa lapie sie NA CENIE (bez slowa-hype)
+    d = detect_deal(_item("Tam gdzie gory i ocean - Reunion 2750 PLN, loty z Warszawy"))
+    check("Reunion 2750 zl (longhaul, bez hype) -> great_deal", d and d.typ == "great_deal")
+    d = detect_deal(_item("Zanzibar 2800 zl w obie strony z Warszawy"))
+    check("nowy kierunek Zanzibar 2800 zl -> great_deal", d and d.typ == "great_deal")
+    check("longhaul powyzej progu (3500 zl, bez hype) odrzucony",
+          detect_deal(_item("Loty na Reunion za 3500 zl z Warszawy")) is None)
+    check("europejski 2500 zl bez hype (brak falszywego longhaul) odrzucony",
+          detect_deal(_item("Romantyczny weekend w Rzymie za 2500 zl")) is None)
+
 
 def test_dedup():
     print("\n[dedup] deduplikacja")

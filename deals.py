@@ -16,10 +16,12 @@ from models import Promotion
 
 # --- Progi (mozesz dostroic) -------------------------------------------------
 DEFAULT = {
-    # Mega-tani lot dalekodystansowy (ekonomiczny) ponizej tej ceny = perelka.
-    "max_mega_pln": 1500,
-    "max_mega_eur": 350,
-    "max_mega_usd": 400,
+    # Realny prog dla lotow DALEKODYSTANSOWYCH (ekonomiczny): swietna cena na drugi koniec
+    # swiata to zwykle 2000-3500 zl, nie <1500 zl. Lot longhaul ponizej tej ceny = perelka
+    # NA SAMEJ CENIE (bez potrzeby slowa-hype). Dzieki temu np. Reunion 2750 zl sie lapie.
+    "max_longhaul_pln": 3000,
+    "max_longhaul_eur": 700,
+    "max_longhaul_usd": 750,
     # Bardzo tani lot w klasie biznes ponizej tej ceny = perelka.
     "max_business_pln": 4000,
     "max_business_eur": 900,
@@ -49,13 +51,38 @@ BUSINESS_SIGNALS = [
 ]
 
 # Dalekodystansowe kierunki - mega-tani lot tam jest naprawde wyjatkowy.
+# Dalekodystansowe kierunki - mega-tani lot tam jest naprawde wyjatkowy.
+# Uwaga: dopasowanie po FRAGMENCIE tekstu, wiec unikamy krotkich tokenow, ktore wpadaja
+# w polskie slowa (np. "oman" w "romantyczny", "lima" w "klimat", "mali" w "malina").
 LONGHAUL = [
-    "azja", "azji", "tajland", "bangkok", "japoni", "tokio", "chiny", "pekin",
-    "singapur", "bali", "indonezj", "malediw", "sri lanka", "wietnam", "filipiny",
-    "usa", "stany", "nowy jork", "new york", "los angeles", "miami", "kanad", "toronto",
-    "meksyk", "karaib", "dominikan", "kuba", "brazyli", "argentyn", "peru", "chile",
-    "australi", "nowa zeland", "rpa", "kapsztad", "emirat", "dubaj", "abu dhabi",
-    "katar", "doha", "seszele", "mauritius", "zanzibar", "japan", "thailand", "maldives",
+    # Azja
+    "azja", "azji", "tajland", "thailand", "bangkok", "japoni", "japan", "tokio", "osaka",
+    "chiny", "pekin", "szanghaj", "hongkong", "hong kong", "tajwan", "taiwan", "taipei",
+    "korea", "seul", "seoul", "singapur", "bali", "indonezj", "dżakarta", "jakarta",
+    "malediw", "maldives", "sri lanka", "wietnam", "hanoi", "sajgon", "filipiny", "manila",
+    "kambodza", "kambodża", "cambodia", "laos", "birma", "myanmar", "nepal", "katmandu",
+    "indie", "india", "delhi", "mumbai", "bombaj",
+    # Bliski Wschod / Zatoka (dalekie loty tranzytowe)
+    "emirat", "dubaj", "abu dhabi", "katar", "doha", "bahrajn", "maskat",
+    # Ameryka Polnocna
+    "usa", "stany", "nowy jork", "new york", "los angeles", "san francisco", "miami",
+    "chicago", "boston", "seattle", "las vegas", "orlando", "houston", "dallas",
+    "atlanta", "denver", "san diego", "waszyngton", "hawaje", "hawaii", "honolulu",
+    "kanad", "toronto", "vancouver", "montreal", "calgary",
+    # Ameryka Srodkowa i Karaiby
+    "meksyk", "cancun", "karaib", "dominikan", "kuba", "hawana", "jamajka", "jamaica",
+    "barbados", "bahamy", "bahamas", "portoryko", "aruba", "curacao", "kostaryka",
+    "costa rica", "panama", "gwatemala", "belize",
+    # Ameryka Poludniowa
+    "brazyli", "rio de janeiro", "sao paulo", "argentyn", "buenos aires", "peru", "chile",
+    "santiago", "kolumbia", "colombia", "bogota", "ekwador", "quito", "boliwia", "urugwaj",
+    # Afryka i Ocean Indyjski
+    "rpa", "kapsztad", "johannesburg", "durban", "kenia", "kenya", "tanzania", "zanzibar",
+    "etiopia", "namibia", "botswana", "mozambik", "madagaskar", "madagascar", "seszele",
+    "mauritius", "reunion", "réunion", "saint-denis", "senegal", "ghana", "nigeria",
+    # Oceania / Pacyfik
+    "australi", "sydney", "melbourne", "nowa zeland", "auckland", "fidzi", "fiji",
+    "tahiti", "polinezja", "bora bora", "samoa", "tonga", "guam", "nowa kaledonia",
 ]
 
 AIRLINES = [
@@ -182,9 +209,12 @@ def detect_deal(raw_item: dict, cfg: dict | None = None) -> Promotion | None:
     is_business = _contains_any(low, BUSINESS_SIGNALS)
     is_longhaul = _contains_any(low, LONGHAUL)
     has_price = pln is not None or eur is not None or usd is not None
-    mega = ((pln is not None and pln <= cfg["max_mega_pln"]) or
-            (eur is not None and eur <= cfg["max_mega_eur"]) or
-            (usd is not None and usd <= cfg["max_mega_usd"]))
+    # Realny prog dla lotow dalekich: longhaul ponizej progu longhaul (>= progu mega) =
+    # perelka na samej cenie, bez potrzeby slowa-hype.
+    longhaul_cheap = is_longhaul and (
+        (pln is not None and pln <= cfg["max_longhaul_pln"]) or
+        (eur is not None and eur <= cfg["max_longhaul_eur"]) or
+        (usd is not None and usd <= cfg["max_longhaul_usd"]))
 
     typ = None
 
@@ -200,9 +230,10 @@ def detect_deal(raw_item: dict, cfg: dict | None = None) -> Promotion | None:
     if typ is None and is_error:
         typ = "error_fare"
 
-    # 3) TANI LOT / mega okazja - bardzo tani lot dalekodystansowy albo oferta z hype.
-    #    To NIE jest blad cenowy, wiec dostanie tag [TANI LOT], nie [BLAD CENOWY].
-    if typ is None and ((is_longhaul and mega) or (is_hype and has_price)):
+    # 3) TANI LOT / mega okazja - tani lot dalekodystansowy (do progu longhaul, np. 3000 zl)
+    #    albo oferta z hype. Celowo WASKI: nie alarmujemy o zwyklych tanich lotach do Europy.
+    #    (longhaul_cheap obejmuje tez longhaul ponizej progu mega.) To NIE blad cenowy -> [TANI LOT].
+    if typ is None and (longhaul_cheap or (is_hype and has_price)):
         typ = "great_deal"
 
     if typ is None:
