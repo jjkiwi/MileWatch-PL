@@ -181,12 +181,18 @@ def test_golden():
     check("wczytano 2 okna", len(windows) == 2)
 
     # Dopasowanie terminu podrozy do okna (zakres miesiecy, DE, zakres dni, miejscownik PL)
-    m = golden.match("Tanie loty, terminy podrozy: wrzesien-grudzien 2026", windows, TODAY)
+    m = golden.match("Tanie loty, terminy podrozy: sierpien-wrzesien 2026", windows, TODAY)
     check("zakres miesiecy trafia w okno Lato", m is not None and m.nazwa == "Lato")
-    m = golden.match("Reisezeitraum: 01.09.2026 - 15.12.2026", windows, TODAY)
+    m = golden.match("Reisezeitraum: 01.09.2026 - 20.09.2026", windows, TODAY)
     check("DE Reisezeitraum (zakres dat) trafia", m is not None)
     m = golden.match("Lec w sierpniu 2026 na urlop", windows, TODAY)
     check("miejscownik 'w sierpniu' trafia w Lato", m is not None and m.nazwa == "Lato")
+
+    # Zbyt dlugi okres (szeroka waznosc taryfy, nie termin urlopu) -> pomijany
+    check("10-miesieczna waznosc taryfy NIE jest zlotym terminem",
+          golden.match("Reisezeitraum September 2026 bis Juni 2027", windows, TODAY) is None)
+    check("celowany miesiac (wrzesien) nadal trafia",
+          golden.match("loty tylko we wrzesniu 2026", windows, TODAY) is not None)
 
     # Brak trafienia: poza oknami / brak terminu / data waznosci (nie termin lotu)
     check("listopad poza oknami -> brak",

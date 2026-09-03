@@ -24,6 +24,12 @@ logger = logging.getLogger(__name__)
 
 TAG = "Zloty termin"
 
+# Maksymalna dlugosc wykrytego "terminu podrozy". Dluzsze okresy (np. 10-miesieczne okna
+# waznosci taryfy typu "Reisezeitraum September 2026 bis Juni 2027") to zwykle szeroka
+# waznosc oferty, a nie celowany termin urlopu - ignorujemy je, zeby zloty termin nie
+# lapal niemal kazdej oferty. 92 dni ~ jeden sezon; realny urlop jest krotszy.
+MAX_PERIOD_DAYS = 92
+
 # Nazwy miesiecy PL w kilku przypadkach (mianownik "wrzesien", miejscownik "we wrzesniu"),
 # do tego formy z extract.py (dopelniacz PL "wrzesnia" oraz EN/DE). Warianty z/bez polskich znakow.
 _EXTRA_PL = {
@@ -228,7 +234,8 @@ def match(text: str, windows: list[Window], today: date | None = None) -> Golden
     if not windows or not text:
         return None
     today = today or date.today()
-    periods = _travel_periods(text, today)
+    # Pomijamy zbyt dlugie okresy (szeroka waznosc taryfy, nie termin urlopu) - patrz MAX_PERIOD_DAYS.
+    periods = [p for p in _travel_periods(text, today) if (p[1] - p[0]).days <= MAX_PERIOD_DAYS]
     if not periods:
         return None
     for w in windows:
