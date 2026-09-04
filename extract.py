@@ -57,12 +57,27 @@ KNOWN_PARTNERS = [
     "Diners Club", "Mastercard", "Visa",
 ]
 
-# Regiony.
+# Regiony. Dopasowanie po GRANICY SLOWA (patrz _extract_regions), nie po fragmencie -
+# inaczej "azja"/"azji" lapaloby wszechobecne slowo "okazja"/"okazji" i robilo z Azji smietnik.
+# Wartosci to rdzenie (matchowane od poczatku slowa), wiec lapia tez odmiane ("Azji", "Maderze").
 REGION_SIGNALS = {
-    "Polska": ["polska", "polski", "warszawa", "krakow", "kraków", "pln", "zlot", "polen"],
-    "Europa": ["europa", "europ", "niemcy", "frankfurt", "monachium", "münchen", "deutschland"],
-    "Ameryka Polnocna": ["usa", "stany", "ameryka", "kanada", "new york", "nowy jork"],
-    "Azja": ["azja", "azji", "singapur", "tajland", "japoni", "chiny", "asien"],
+    "Polska": ["polska", "polski", "polsce", "warszaw", "krakow", "kraków", "gdansk",
+               "gdańsk", "wroclaw", "wrocław", "poznan", "polen"],
+    "Europa": ["europa", "europ", "niemcy", "deutschland", "frankfurt", "monachium",
+               "münchen", "hiszpan", "wloch", "włoch", "portugal", "mader", "teneryf",
+               "kanaryjsk", "azory", "grecj", "chorwacj", "francj", "brytani", "londyn",
+               "lizbon", "barcelon", "rzym"],
+    "Ameryka Polnocna": ["usa", "stany", "kanad", "new york", "nowy jork", "los angeles",
+                         "miami", "meksyk", "kaliforni"],
+    "Ameryka Poludniowa": ["brazyli", "argentyn", "peru", "chile", "kolumbi", "boliwi",
+                           "urugwaj", "ekwador", "patagoni"],
+    "Azja": ["azja", "azji", "azjat", "singapur", "tajland", "japoni", "chiny", "korea",
+             "wietnam", "indie", "indii", "indonezj", "bali", "filipin", "asien"],
+    "Afryka": ["afryk", "kenia", "keni", "tanzani", "zanzibar", "maroko", "egipt", "tunezj",
+               "rpa", "kapsztad", "madagask", "reunion", "réunion", "mauritius", "seszel"],
+    "Bliski Wschod": ["dubaj", "emirat", "katar", "doha", "abu dhabi", "izrael", "jordani",
+                      "stambul", "stambuł"],
+    "Oceania": ["australi", "nowa zeland", "fidzi", "tahiti", "polinezj"],
 }
 
 # --- Wyrazenia regularne ------------------------------------------------------
@@ -130,10 +145,15 @@ def _extract_partner(text: str) -> str | None:
     return None
 
 
+def _region_signal_matches(text_low: str, signal: str) -> bool:
+    # Granica slowa PRZED rdzeniem: "azji" trafia w "do Azji", ale NIE w "okazji".
+    return re.search(r"\b" + re.escape(signal), text_low) is not None
+
+
 def _extract_regions(text_low: str) -> list[str]:
     found = []
     for region, signals in REGION_SIGNALS.items():
-        if _contains_any(text_low, signals):
+        if any(_region_signal_matches(text_low, s) for s in signals):
             found.append(region)
     return found
 

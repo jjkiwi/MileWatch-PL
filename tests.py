@@ -62,6 +62,24 @@ def test_extract_rejects_news():
           extract_from_item(_item("Miles & More Archive - InsideFlyer DE bonus")) == [])
 
 
+def test_regions():
+    print("\n[regiony] dopasowanie po granicy slowa (koniec smietnika 'Azja')")
+    from extract import _extract_regions
+    check("'okazja' NIE jest juz Azja (regresja buga)",
+          "Azja" not in _extract_regions("super okazja na loty do rzymu"))
+    check("'okazji' NIE jest Azja",
+          "Azja" not in _extract_regions("okazji nie mozna przegapic"))
+    check("realna Azja (Bangkok) -> Azja",
+          "Azja" in _extract_regions("tanie loty do azji, bangkok i tajlandia"))
+    check("Madera -> Europa (nie Azja)",
+          _extract_regions("madera - loty w sezonie letnim") == ["Europa"])
+    check("Zanzibar -> Afryka",
+          "Afryka" in _extract_regions("zanzibar all inclusive"))
+    check("Dubaj -> Bliski Wschod",
+          "Bliski Wschod" in _extract_regions("weekend w dubaju"))
+    check("Rzym -> Europa", "Europa" in _extract_regions("city break w rzymie"))
+
+
 def test_deals():
     print("\n[deals] perelki: blad cenowy / tani lot / biznes + filtr wylotu")
     # Faza 0: blad cenowy TYLKO przy jawnym sygnale
@@ -241,6 +259,7 @@ def test_golden():
 def main():
     test_extract_miles()
     test_extract_rejects_news()
+    test_regions()
     test_deals()
     test_dedup()
     test_digest()
