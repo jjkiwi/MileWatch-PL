@@ -160,8 +160,10 @@ czesto go nie zawieraja - wtedy ustaw `profile.pelna_tresc: true`, zeby dociagac
 5. **Scoring** (`scoring.py`) - ocena okazji 0-100 (zloty termin, kategoria, bonus %,
    dalekodystansowosc, rekord cenowy, kara za wylot spoza regionu). Steruje gwiazdka w alercie,
    sortowaniem i `min_score`.
-6. **Baseline cen** (`baseline.py`) - uczy sie typowych cen tras (tabela `price_history`) i
-   oznacza "Rekord cenowy", gdy cena jest naprawde wyjatkowa. Opcjonalnie pelna tresc artykulu
+6. **Baseline cen** (`baseline.py`) - uczy sie rozkladu cen kazdego kierunku (tabela
+   `price_history`) i ocenia PERCENTYLOWO, jak promocyjna jest oferta: najtansze ~10% (albo
+   nowe minimum) -> "Rekord cenowy" (+25 do scoringu), najtansze ~25% -> "Dobra cena" (+12).
+   Im wiecej danych, tym trafniej. Opcjonalnie pelna tresc artykulu
    (`fetch_article.py`, flaga `pelna_tresc`) dla dokladniejszej ceny/kierunku.
 7. **Dedup** (`dedup.py`) - rapidfuzz + dopasowanie strukturalne wykrywaja te sama promocje.
 8. **Storage** (`storage.py`) - SQLite, unikalny `hash_dedup`.

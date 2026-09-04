@@ -32,6 +32,7 @@ def score_promo(promo: Promotion) -> int:
     longhaul = "Dalekie loty" in regiony
     rekord = "Rekord cenowy" in regiony
     zloty = "Zloty termin" in regiony
+    dobra_cena = "Dobra cena" in regiony
     bonus = promo.bonus_pct or 0
 
     s = float(BASE.get(promo.typ, 18))
@@ -41,9 +42,11 @@ def score_promo(promo: Promotion) -> int:
     if zloty:
         s += 30
 
-    # Cena rekordowo niska dla kierunku (baseline, Faza 3) - mocny sygnal.
-    if rekord:
-        s += 15
+    # Nauka cen (baseline): percentyl ceny wzgledem historii kierunku - im nizej, tym mocniej.
+    if rekord:            # najtansze ~10% albo nowe minimum
+        s += 25
+    elif dobra_cena:      # najtansze ~25%
+        s += 12
 
     # Bonus % (promocje Miles & More): +35 pkt przy 100% bonusu.
     if bonus:

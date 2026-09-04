@@ -199,6 +199,40 @@ def test_baseline():
     check("rekord podbija scoring", score_promo(p_rec) > score_promo(p_norm))
 
 
+def test_baseline_percentyle():
+    print("\n[baseline] percentyle: Rekord (~10%) / Dobra cena (~25%) / typowa")
+    import sqlite3
+    import baseline
+
+    conn = sqlite3.connect(":memory:")
+    conn.execute("CREATE TABLE price_history (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                 "route TEXT, currency TEXT, amount INTEGER, ts TEXT)")
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat()
+    # route = wartosc, ktora zwraca baseline._place dla tekstu "Szwecja/Szwecji" (rdzen)
+    for amt in [100, 120, 140, 160, 180, 200, 220, 240, 260, 300]:
+        conn.execute("INSERT INTO price_history (route, currency, amount, ts) VALUES (?,?,?,?)",
+                     (baseline._place("szwecja"), "PLN", amt, now))
+    conn.commit()
+
+    def mk(t):
+        return Promotion(id="", tytul=t, typ="great_deal", bonus_pct=None, partner=None,
+                         wazne_do=None, regiony=[], streszczenie="")
+
+    p_low = mk("Loty do Szwecji za 110 zl")      # <= ~10 percentyl -> Rekord
+    p_good = mk("Loty do Szwecji za 135 zl")     # <= ~25 percentyl -> Dobra cena
+    p_typ = mk("Loty do Szwecji za 250 zl")      # powyzej -> nic
+    for p in (p_low, p_good, p_typ):
+        baseline.assess(conn, p)
+
+    check("cena ~10% (110) -> Rekord cenowy", "Rekord cenowy" in p_low.regiony)
+    check("cena ~25% (135) -> Dobra cena", "Dobra cena" in p_good.regiony)
+    check("cena typowa (250) -> bez tagu",
+          "Rekord cenowy" not in p_typ.regiony and "Dobra cena" not in p_typ.regiony)
+    check("Rekord punktuje wyzej niz Dobra cena", score_promo(p_low) > score_promo(p_good))
+    check("Dobra cena punktuje wyzej niz typowa", score_promo(p_good) > score_promo(p_typ))
+
+
 def test_golden():
     print("\n[golden] zlote terminy: okna urlopowe -> alert o lotach w tym okresie")
     TODAY = date(2026, 8, 26)
@@ -265,6 +299,7 @@ def main():
     test_digest()
     test_scoring()
     test_baseline()
+    test_baseline_percentyle()
     test_golden()
     print(f"\n=== WYNIK: {PASS} OK, {FAIL} FAIL ===")
     return 1 if FAIL else 0
